@@ -6,7 +6,6 @@ COPY package-lock.json .
 RUN npm install
 
 WORKDIR /acme-explorer
-COPY .prod.env .prod.env
 COPY source source
 
 EXPOSE 8080
