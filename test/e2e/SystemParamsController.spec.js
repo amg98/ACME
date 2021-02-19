@@ -1,5 +1,5 @@
-describe("Dummy API", () => {
-    test("Dummy test", () => {
+describe("SystemParams API", () => {
+    it("Dummy test", () => {
 
     });
 });
