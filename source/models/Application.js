@@ -21,3 +21,5 @@ const ApplicationSchema = new Schema({
         createdAt: 'timeStamp'
     }
 })
+
+module.exports = mongoose.model("Application", ApplicationSchema)
