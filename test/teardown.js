@@ -1,3 +1,3 @@
-module.exports = async () => {
+after(async () => {
     await global.server.stop();
-};
+});
