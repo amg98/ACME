@@ -2,6 +2,8 @@ const express = require("express");
 const swagger = require("./swagger");
 const cors = require("cors");
 const DatabaseConnection = require("./DatabaseConnection");
+const SponsorshipController = require("./routes/SponsorshipController");
+const SystemParamsController = require("./routes/SystemParamsController");
 
 class App {
 
@@ -18,8 +20,9 @@ class App {
         this.app.use(this.router);
 
         // Route registration
-        /*const apiPrefix = swagger.getBasePath();
-        this.billingProfileController = new BillingProfileController(apiPrefix, this.router);*/
+        const apiPrefix = swagger.getBasePath();
+        SponsorshipController.register(apiPrefix, this.router);
+        SystemParamsController.register(apiPrefix, this.router);
 
         this.app.use(App.errorHandler);
 
