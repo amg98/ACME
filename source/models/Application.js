@@ -10,12 +10,9 @@ const ApplicationSchema = new Schema({
         default: 'PENDING',
         required: [true]
     },
-    comments: {
-        type: Array,
-    },
-    rejectReason: {
-        type: String,
-    }
+    comments: Schema.Types.Array,
+    rejectReason: Schema.Types.String,
+    tripID: Schema.Types.ObjectId,
 }, {
     timestamps: {
         createdAt: 'timeStamp'
