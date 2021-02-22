@@ -1,4 +1,5 @@
-const Schema = require("mongoose").Schema;
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const SystemParamSchema = new Schema({
     _id: String,
@@ -10,4 +11,4 @@ SystemParamSchema.pre("save", (next) => {
     next();
 });
 
-module.exports = mongoose.model("SystemParam", SystemParamSchema);
+module.exports = mongoose.model("systemparams", SystemParamSchema);

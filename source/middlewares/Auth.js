@@ -1,19 +1,23 @@
-module.exports.checkAdmin = (req, res, next) => {
+module.exports.CheckAdmin = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
+    next();
 };
 
-module.exports.checkSponsor = (req, res, next) => {
+module.exports.CheckSponsor = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
+    next();
 };
 
-module.exports.checkExplorer = (req, res, next) => {
+module.exports.CheckExplorer = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
+    next();
 };
 
-module.exports.checkManager = (req, res, next) => {
+module.exports.CheckManager = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
+    next();
 };
