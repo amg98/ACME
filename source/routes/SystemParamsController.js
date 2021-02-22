@@ -1,57 +1,85 @@
+const { CheckAdmin } = require("../middlewares/Auth");
+const Validators = require("../middlewares/Validators");
+const SystemParamsSchema = require("../models/SystemParamSchema");
+
+const setSystemParam = (paramName) => async (req, res) => {
+    try {
+        let doc = await SystemParamsSchema.findOneAndUpdate({ _id: paramName }, { value: req.query.value });
+        if(!doc) return res.sendStatus(401);
+        doc = await SystemParamsSchema.findById(doc._id);
+        res.status(200).send(doc.value.toString());
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
+}
+
+const getSystemParam = (paramName) => async () => {
+    const doc = await SystemParamsSchema.findById(paramName);
+    if(doc) {
+        return doc.value;
+    } else {
+        throw "Database error";
+    }
+};
+
+const SystemParams = {
+    FlatRate: {
+        name: "flat-rate",
+        validators: [Validators.Range("query", "value", 0, 100)]
+    },
+    FinderMaxResults: {
+        name: "finder-max-results",
+        validators: [Validators.Range("query", "value", 1, 100)]
+    },
+    FinderResultsTTL: {
+        name: "finder-results-ttl",
+        validators: [Validators.Range("query", "value", 1, 24)]
+    }
+};
+
+module.exports.getFlatRate = getSystemParam(SystemParams.FlatRate.name);
+module.exports.getFinderMaxResults = getSystemParam(SystemParams.FinderMaxResults.name);
+module.exports.getFinderResultsTTL = getSystemParam(SystemParams.FinderResultsTTL.name);
+
+module.exports.register = (apiPrefix, router) => {
+    Object.entries(SystemParams).forEach(([key, systemParam]) => {
+        router.put(`${apiPrefix}/system-params/${systemParam.name}`, 
+                    CheckAdmin, 
+                    Validators.Required("query", "value"), 
+                    ...systemParam.validators, 
+                    setSystemParam(systemParam.name));
+    });
+};
+
 /**
  * Set the flat rate for sponsorships
  * @route PUT /system-params/flat-rate
  * @group System params - Global system parameters
- * @param {float}  value.query.required         - Flat rate value to be set
- * @returns {}                      204 - Flat rate set successfully
+ * @param {number} value.query.required         - Flat rate value to be set
+ * @returns {number}                200 - Returns the current state for the flat rate
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const setFlatRate = (req, res) => {
-    // Debe ser admin
-};
 
 /**
  * Set the maximum number of results to be returned from a finder
  * @route PUT /system-params/finder-max-results
  * @group System params - Global system parameters
- * @param {float}  value.query.required         - Finder max results value to be set
- * @returns {}                      204 - Finder max results set successfully
+ * @param {integer} value.query.required         - Finder max results value to be set
+ * @returns {integer}               200 - Returns the current state for the finder max results
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const setFinderMaxResults = (req, res) => {
-    // Debe ser admin
-};
 
 /**
  * Set the time-to-live for the finder results
  * @route PUT /system-params/finder-results-ttl
  * @group System params - Global system parameters
- * @param {float}  value.query.required         - TTL value to be set
- * @returns {}                      204 - TTL set successfully
+ * @param {integer} value.query.required         - TTL value to be set
+ * @returns {integer}               200 - Returns the current state for the TTL
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const setFinderResultsTTL = (req, res) => {
-    // Debe ser admin
-};
-
-module.exports.getFlatRate = () => {
-
-};
-
-module.exports.getFinderMaxResults = () => {
-
-};
-
-module.exports.getFinderResultsTTL = () => {
-
-};
-
-module.exports.register = (apiPrefix, router) => {
-
-};
