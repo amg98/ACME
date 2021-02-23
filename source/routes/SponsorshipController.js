@@ -1,14 +1,22 @@
+const { CheckSponsor } = require("../middlewares/Auth");
+const Validators = require("../middlewares/Validators");
+
 /**
  * Get a specific sponsorship for a sponsor
  * @route GET /sponsorships
  * @group Sponsorships - Trip advertising
  * @param {string} id.path              - Sponsorship identifier
- * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship
+ * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const get = (req, res) => {
+const getSponsorship = (req, res) => {
     // Necesita sponsorID autenticado
+    if(req.path.id) {
+
+    } else {
+
+    }
 };
 
 /**
@@ -21,7 +29,9 @@ const get = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const createOne = (req, res) => {
+const createSponsorship = (req, res) => {
+    delete req.body.sponsorship._id;
+    delete req.body.sponsorship.isPaid;
     // Necesita sponsorID autenticado
 };
 
@@ -35,7 +45,8 @@ const createOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const editOne = (req, res) => {
+const updateSponsorship = (req, res) => {
+    delete req.body.sponsorship.isPaid;
     // Necesita sponsorID autenticado, _id
 };
 
@@ -49,7 +60,7 @@ const editOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const deleteOne = (req, res) => {
+const deleteSponsorship = (req, res) => {
     // Necesita sponsorID autenticado, _id
 };
 
@@ -64,7 +75,8 @@ const deleteOne = (req, res) => {
  * @returns {}                      404 - Specified sponsorship does not exist
  * @returns {DatabaseError}         500 - Database error
  */
-const payment = (req, res) => {
+const createPayment = (req, res) => {
+    // TODO Validators.CheckPaymentData
     // Necesita sponsorID autenticado, _id
     // Devuelve URL para pagar
 };
@@ -81,12 +93,19 @@ const payment = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const confirmPayment = (req, res) => {
+    // TODO Validators.CheckConfirmData
     // Necesita sponsorID autenticado, _id
     // Necesita parámetros de paypal
 };
 
 module.exports.register = (apiPrefix, router) => {
-
+    const apiURL = `${apiPrefix}/sponsorships`;
+    router.get(apiURL, CheckSponsor, getSponsorship);
+    router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), createSponsorship);
+    router.put(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), updateSponsorship);
+    router.delete(apiURL, CheckSponsor, Validators.Required("path", "id"), deleteSponsorship);
+    router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckPaymentData("body", "paymentData"), createPayment);
+    router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.CheckConfirmData("body", "paymentData"), confirmPayment);
 };
 
 /**

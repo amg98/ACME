@@ -19,4 +19,12 @@ module.exports.Range = (objectName, fieldName, minValue, maxValue) => (req, res,
     } else {
         res.status(400).json({ reason: "Exceeded boundaries" });
     }
-}
+};
+
+module.exports.CheckPaymentData = (objectName, fieldName) => (req, res, next) => {
+    // TODO
+};
+
+module.exports.CheckConfirmData = (objectName, fieldName) => (req, res, next) => {
+    // TODO
+};
