@@ -12,6 +12,7 @@ const ApplicationSchema = new Schema({
     },
     comments: Schema.Types.Array,
     rejectReason: Schema.Types.String,
+    explorerID: Schema.Types.ObjectId,
     tripID: Schema.Types.ObjectId,
 }, {
     timestamps: {
