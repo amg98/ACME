@@ -16,7 +16,8 @@
         "express": "^4.17.1",
         "express-swagger-generator": "^1.1.17",
         "mongodb": "3.6.3",
-        "mongoose": "5.11.15"
+        "mongoose": "5.11.15",
+        "randexp": "^0.5.3"
     },
     "devDependencies": {
         "@types/cors": "^2.8.9",
