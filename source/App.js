@@ -5,6 +5,7 @@ const DatabaseConnection = require("./DatabaseConnection");
 const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
 const ActorController = require("./routes/ActorController");
+const ApplicationController = require("./routes/ApplicationController");
 
 class App {
 
@@ -25,6 +26,7 @@ class App {
         SponsorshipController.register(apiPrefix, this.router);
         SystemParamsController.register(apiPrefix, this.router);
         ActorController.register(apiPrefix, this.router);
+        ApplicationController.register(apiPrefix, this.router);
 
         this.app.use(App.errorHandler);
 
