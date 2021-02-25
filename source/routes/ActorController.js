@@ -1,5 +1,6 @@
 const Actor = require("../models/ActorSchema");
-
+const Validators = require("../middlewares/Validators");
+const { CheckAdmin } = require("../middlewares/Auth");
 /**
  * Get an actor
  * @route GET /actors
@@ -8,7 +9,7 @@ const Actor = require("../models/ActorSchema");
  * @returns {Actor.model}           200 - Returns the requested actor
  * @returns {DatabaseError}         500 - Database error
  */
-const get = (req, res) => {
+const getActor = (req, res) => {
     Actor.findById(req.params.actorId, function(err, actor) {
         if (err){
           res.send(err);
@@ -23,59 +24,77 @@ const get = (req, res) => {
  * Create a new user
  * @route POST /actors
  * @group Actors - System users
- * @param {Actor.model} actor.body.required  - New user
+ * @param {ActorPost.model} actor.body.required  - New user
  * @returns {string}                     200 - Returns the new user
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
-const createOne = (req, res) => {
+const createActor = (req, res) => {
     // En caso de rol=Manager, necesita ser un administratorID autenticado
+    // TODO
 };
 
 /**
  * Update personal data of an existing actor
  * @route PUT /actors
  * @group Actors - System users
- * @param {Actor.model} actor.body.required  - Actor personal data updates
+ * @param {ActorPut.model} actor.body.required  - Actor personal data updates
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
-const editOne = (req, res) => {
+const updateActor = (req, res) => {
     // Necesita un actorID autenticado, _id
+    // TODO
 };
 
 /**
  * Ban an actor
  * @route PUT /actors/ban
  * @group Actors - System users
- * @param {Actor.model} actor.body.required  - Actor updates
+ * @param {ActorPut.model} actor.body.required  - Actor updates
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
 const banActor = (req, res) => {
     // Necesita un administratorID autenticado, _id
+    // TODO
 };
 
 /**
  * Unban an actor
  * @route PUT /actors/unban
  * @group Actors - System users
- * @param {Actor.model} actor.body.required  - Actor updates
+ * @param {ActorPut.model} actor.body.required  - Actor updates
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
 const unbanActor = (req, res) => {
     // Necesita un administratorID autenticado, _id
+    // TODO
 };
 
 
 module.exports.register = (apiPrefix, router) => {
-
+  const apiURL = `${apiPrefix}/actors`;
+  router.get(apiURL+'/:actorId', getActor);
+  router.post(apiURL, Validators.Required("body", "actor"), createActor); //TODO Check if role=Manager then auth user has to be Admin
+  router.put(apiURL+'/:actorId', Validators.Required("body", "actor"), updateActor);  //TODO Check for auth
+  router.put(apiURL+'/:actorId', CheckAdmin, Validators.Required("body", "actor"), banActor);
+  router.put(apiURL+'/:actorId', CheckAdmin, Validators.Required("body", "actor"), unbanActor);
 };
 
+/**
+ * @typedef ActorPost
+ * @property {Actor.model} actor - Actor to add
+ */
+
+/**
+ * @typedef ActorPut
+ * @property {Actor.model} actor - Actor to update
+ */
 
 /**
  * @typedef Actor
