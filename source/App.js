@@ -4,6 +4,7 @@ const cors = require("cors");
 const DatabaseConnection = require("./DatabaseConnection");
 const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
+const ActorController = require("./routes/ActorController");
 
 class App {
 
@@ -23,6 +24,7 @@ class App {
         const apiPrefix = swagger.getBasePath();
         SponsorshipController.register(apiPrefix, this.router);
         SystemParamsController.register(apiPrefix, this.router);
+        ActorController.register(apiPrefix, this.router);
 
         this.app.use(App.errorHandler);
 
