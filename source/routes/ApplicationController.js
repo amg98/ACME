@@ -13,20 +13,63 @@ const Application = require("../models/ApplicationSchema");
 const getOne = (req, res) => {
   // Necesita explorerID autenticado
   console.log(Date() + "-GET /application");
-  const applicationId = req.query.applicationId;
 
-  if (applicationId) {
-    Application.findOne({ _id: applicationId, deleted: false }).exec(function (
-      err,
-      application
-    ) {
-      if (application) {
-        res.send(product);
-      } else {
-        throw "Database error";
+  Application.findById(req.params.applicationId, function (err, application) {
+    if (err) {
+      res.send(err);
+    }
+    else {
+      res.json(application);
+    }
+  });
+};
+
+/**
+ * Find applications by Trip
+ * @route GET /application/trip
+ * @group Applications - Application to a trip
+ * @param {string} id.path              - Trip identifier
+ * @returns {Array.<Application>}   200 - Returns the requested application
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {DatabaseError}         500 - Database error
+ */
+const getAllByTripId = (req, res) => {
+  console.log(Date() + "-GET /application/trip/tripId");
+
+  Application.find({ tripId: req.params.tripId })
+    .lean()
+    .exec(function (err, applications) {
+      if (err) {
+        res.send(err);
+      }
+      else {
+        res.json(applications);
       }
     });
-  }
+};
+
+/**
+ * Find applications by explorer and status
+ * @route GET /application/explorer
+ * @group Applications - Application to a trip
+ * @param {string} id.path              - Explorer identifier
+ * @returns {Array.<Application>}   200 - Returns the requested application
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {DatabaseError}         500 - Database error
+ */
+const getAllByExplorerId = (req, res) => {
+  console.log(Date() + "-GET /application/explorer/explorerId");
+
+  Application.find({ explorerId: req.params.explorerId, status: req.body.status })
+    .lean()
+    .exec(function (err, applications) {
+      if (err) {
+        res.send(err);
+      }
+      else {
+        res.json(applications);
+      }
+    });
 };
 
 /**
@@ -57,7 +100,9 @@ const createOne = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const editOne = (req, res) => {
-  // Necesita explorerID autenticado, _id
+  // Necesita managerId autenticado (Only managers can change), _id
+  // Tambien recibe el estado al que cambia
+  // Puede recibir explorerId autenticado, para pasarla de ACCEPTED/PENDING a CANCELLED
 };
 
 /**
@@ -77,6 +122,8 @@ const deleteOne = (req, res) => {
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/application`;
   router.get(apiURL + '/:applicationId', getOne);
+  router.get(apiURL + '/trip/:tripId', getAllByTripId);
+  router.get(apiURL + '/explorer/:explorerId', getAllByExplorerId);
   router.post(apiURL, createOne);
   router.put(apiURL + '/:applicationId', editOne);
   router.delete(apiURL + '/:applicationId', deleteOne)
