@@ -90,7 +90,7 @@ const createOne = (req, res) => {
 };
 
 /**
- * Update an existing application for a specific explorer
+ * Explorer cancel an application
  * @route PUT /application
  * @group Applications - Application to a trip
  * @param {ApplicationPut.model} application.body.required  - Application updates
@@ -99,11 +99,61 @@ const createOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const editOne = (req, res) => {
+const explorerCancel = (req, res) => {
+  console.log(Date() + "-PUT /application - Explorer CANCEL");
+  // Puede recibir explorerId autenticado, para pasarla de ACCEPTED/PENDING a CANCELLED
+  Application.findById(req.params.applicationId, async function (err, application) {
+    if (err) {
+      res.send(err);
+    }
+    else {
+      if(application.status === "PENDING" || application.status === "ACCEPTED"){
+        let doc = await Application.findOneAndUpdate(req.params.applicationId,{status:"CANCELLED"}, function (err, applicationUpdated) {
+          if (err) {
+            res.send(err);
+          }
+        });
+        res.send(doc);
+      }else{
+        res.status(400).json("This application can't be updated")
+      }
+    }
+  });
+};
+
+/**
+ * Manager update an application
+ * @route PUT /application
+ * @group Applications - Application to a trip
+ * @param {ApplicationPut.model} application.body.required  - Application updates
+ * @returns {Application}           200 - Returns the current state for this application
+ * @returns {ValidationError}       400 - Supplied parameters are invalid
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {DatabaseError}         500 - Database error
+ */
+const managerUpdate = (req, res) => {
   // Necesita managerId autenticado (Only managers can change), _id
   // Tambien recibe el estado al que cambia
-  // Puede recibir explorerId autenticado, para pasarla de ACCEPTED/PENDING a CANCELLED
+  console.log(Date() + "-PUT /application - Manager update");
+  Application.findById(req.params.applicationId, async function (err, application) {
+    if (err) {
+      res.send(err);
+    }
+    else {
+      if(application.status === "PENDING"){
+        let doc = await Application.findOneAndUpdate(req.params.applicationId,{status: req.body.status}, function (err, applicationUpdated) {
+          if (err) {
+            res.send(err);
+          }
+        });
+        res.send(doc);
+      }else{
+        res.status(400).json("This application can't be updated")
+      }
+    }
+  });
 };
+
 
 /**
  * Delete an existing application for a specific explorer
@@ -125,7 +175,8 @@ module.exports.register = (apiPrefix, router) => {
   router.get(apiURL + '/trip/:tripId', getAllByTripId);
   router.get(apiURL + '/explorer/:explorerId', getAllByExplorerId);
   router.post(apiURL, createOne);
-  router.put(apiURL + '/:applicationId', editOne);
+  router.put(apiURL + '/explorer/:applicationId', explorerCancel);
+  router.put(apiURL + '/manager/:applicationId', managerUpdate);
   router.delete(apiURL + '/:applicationId', deleteOne)
 };
 
