@@ -20,6 +20,7 @@
         "randexp": "^0.5.3"
     },
     "devDependencies": {
+        "@types/chai": "^4.2.15",
         "@types/cors": "^2.8.9",
         "@types/express": "^4.17.9",
         "chai": "^4.3.0",
