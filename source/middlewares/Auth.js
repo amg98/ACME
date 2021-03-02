@@ -7,6 +7,7 @@ module.exports.CheckAdmin = (req, res, next) => {
 module.exports.CheckSponsor = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
+    req.sponsorID = "123";
     next();
 };
 

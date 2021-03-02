@@ -1,5 +1,6 @@
 const { CheckSponsor } = require("../middlewares/Auth");
 const Validators = require("../middlewares/Validators");
+const SponsorshipSchema = require("../models/SponsorshipSchema");
 
 /**
  * Get a specific sponsorship for a sponsor
@@ -8,14 +9,28 @@ const Validators = require("../middlewares/Validators");
  * @param {string} id.path              - Sponsorship identifier
  * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - If the requested sponsorship does not exist
  * @returns {DatabaseError}         500 - Database error
  */
-const getSponsorship = (req, res) => {
-    // Necesita sponsorID autenticado
-    if(req.path.id) {
-
-    } else {
-
+const getSponsorship = async (req, res) => {
+    try {
+        let docs;
+        if (req.path.id) {
+            docs = await SponsorshipSchema.find({ _id: req.path.id, sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+        } else {
+            docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+        }
+        if (docs.length > 0) {
+            return res.status(200).json(docs);
+        } else {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
 };
 
@@ -29,10 +44,16 @@ const getSponsorship = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const createSponsorship = (req, res) => {
+const createSponsorship = async (req, res) => {
     delete req.body.sponsorship._id;
     delete req.body.sponsorship.isPaid;
-    // Necesita sponsorID autenticado
+    req.body.sponsorship.sponsorID = req.sponsorID;
+    try {
+        const doc = await new SponsorshipSchema(req.body.sponsorship).save();
+        res.status(200).send(doc._id);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -45,9 +66,20 @@ const createSponsorship = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const updateSponsorship = (req, res) => {
+const updateSponsorship = async (req, res) => {
     delete req.body.sponsorship.isPaid;
-    // Necesita sponsorID autenticado, _id
+    delete req.body.sponsorship.sponsorID;
+    try {
+        let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.body.sponsorship._id, sponsorID: req.sponsorID }, req.body.sponsorship);
+        if(doc) {
+            doc = await SponsorshipSchema.findById(doc._id);
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -60,8 +92,17 @@ const updateSponsorship = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const deleteSponsorship = (req, res) => {
-    // Necesita sponsorID autenticado, _id
+const deleteSponsorship = async (req, res) => {
+    try {
+        const doc = await SponsorshipSchema.findOneAndDelete({ _id: req.path.id, sponsorID: req.sponsorID });
+        if(doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
