@@ -4,7 +4,7 @@
  */
 
 module.exports.Required = (objectName, fieldName) => (req, res, next) => {
-    if (req[objectName] && req[objectName].hasOwnProperty(fieldName)) {
+    if (req[objectName] && req[objectName].hasOwnProperty(fieldName) && req[objectName][fieldName]) {
         next();
     } else {
         res.status(400).json({ reason: "Missing fields" });
