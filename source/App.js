@@ -4,6 +4,7 @@ const cors = require("cors");
 const DatabaseConnection = require("./DatabaseConnection");
 const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
+const paypal = require("paypal-rest-sdk");
 
 class App {
 
@@ -27,6 +28,12 @@ class App {
         this.app.use(App.errorHandler);
 
         swagger.setupSwagger(this.app, this.port);
+
+        paypal.configure({
+            mode: process.env.PAYPAL_MODE,
+            client_id: process.env.PAYPAL_CLIENT_ID,
+            client_secret: process.env.PAYPAL_CLIENT_SECRET
+        });
     }
 
     static errorHandler(err, req, res, next) {
