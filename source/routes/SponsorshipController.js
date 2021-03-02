@@ -137,8 +137,8 @@ const confirmPayment = (req, res) => {
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/sponsorships`;
     router.get(`${apiURL}/:id?`, CheckSponsor, getSponsorship);
-    router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), createSponsorship);
-    router.put(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), updateSponsorship);
+    router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists(), createSponsorship);
+    router.put(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists(), updateSponsorship);
     router.delete(`${apiURL}/:id?`, CheckSponsor, Validators.Required("params", "id"), deleteSponsorship);
     router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckPaymentData("body", "paymentData"), createPayment);
     router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.CheckConfirmData("body", "paymentData"), confirmPayment);

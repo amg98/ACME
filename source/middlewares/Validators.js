@@ -23,8 +23,16 @@ module.exports.Range = (objectName, fieldName, minValue, maxValue) => (req, res,
 
 module.exports.CheckPaymentData = (objectName, fieldName) => (req, res, next) => {
     // TODO
+    next();
 };
 
 module.exports.CheckConfirmData = (objectName, fieldName) => (req, res, next) => {
     // TODO
+    next();
+};
+
+module.exports.TripExists = () => (req, res, next) => {
+    // TODO
+    // req.body.sponsorship.tripID
+    next();
 };
