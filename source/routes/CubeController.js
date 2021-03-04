@@ -108,6 +108,11 @@ module.exports.register = (apiPrefix, router) => {
  */
 
  /**
+ * @typedef Rol
+ * @property {string} rol.required          - User role (explorer, manager, sponsor, administrator)
+ */
+
+/**
  * @typedef Actor
  * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
  * @property {string} name.required             - User name
@@ -117,5 +122,5 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} address                   - User address
  * @property {string} password.required         - User password
  * @property {boolean} isBanned.required        - Ban status (true/false)
- * @property {string} rol.required              - User role (explorer, manager, sponsor, administrator)
+ * @property {Array.<Rol>} roles.required       - User roles (explorer, manager, sponsor, administrator)
  */

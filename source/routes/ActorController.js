@@ -1,6 +1,6 @@
 const Actor = require("../models/ActorSchema");
 const Validators = require("../middlewares/Validators");
-const { CheckAdmin } = require("../middlewares/Auth");
+// const { CheckAdmin } = require("../middlewares/Auth");
 /**
  * Get an actor
  * @route GET /actors
@@ -29,9 +29,14 @@ const getActor = (req, res) => {
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
-const createActor = (req, res) => {
-    // En caso de rol=Manager, necesita ser un administratorID autenticado
-    // TODO
+const createActor = async (req, res) => {
+  delete req.body.actor._id;
+  try {
+      const actor = await new Actor(req.body.actor).save();
+      res.status(200).send(actor);
+  } catch (err) {
+      res.status(500).json({ reason: "Database error", err: err });
+  }
 };
 
 /**
@@ -43,47 +48,67 @@ const createActor = (req, res) => {
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
-const updateActor = (req, res) => {
-    // Necesita un actorID autenticado, _id
-    // TODO
+const updateActor = async (req, res) => {
+    // TODO Necesita un actorID autenticado
+    try {
+      let { name, surname, email, phoneNumber, address, password } = req.body.actor;
+      let actor = await Actor.findOne({_id: req.body.actor._id});
+  
+      //Seteo de la contraseña original para evitar error de validación en la db cuando viene vacía
+      if(!password) {
+        password = actor.password
+      }
+
+      let doc = await Actor.updateOne(actor, {name, surname, email, phoneNumber, address, password}, { runValidators: true });
+      if(doc) {
+        doc = await Actor.findById(actor._id);
+        return res.status(200).json({message: "Actor profile updated", actor:doc});
+      } else {
+          return res.sendStatus(401);
+      }
+
+  } catch (err) {
+    console.log(err)
+      res.status(500).json({reason: "Database error", err:err});
+  }
 };
 
 /**
- * Ban an actor
+ * Ban/Unban an actor
  * @route PUT /actors/ban
  * @group Actors - System users
- * @param {ActorPut.model} actor.body.required  - Actor updates
+ * @param {ActorBan.model} isBanned.body.required  - New ban status
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           401 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
  */
-const banActor = (req, res) => {
-    // Necesita un administratorID autenticado, _id
-    // TODO
+const banActor = async (req, res) => {
+    // TODO Necesita un administratorID autenticado, _id
+    try {
+      const actor = await Actor.findOne( {_id: req.params.actorId} );
+
+      actor.isBanned = req.body.isBanned;
+      const doc = await actor.save();
+
+      if(doc) {
+        return res.status(200).json({message: "Actor ban status updated", actor:doc});
+      } else {
+          return res.sendStatus(401);
+      }
+
+  } catch (err) {
+      res.status(500).json({reason: "Database error", err:err});
+  }
 };
 
-/**
- * Unban an actor
- * @route PUT /actors/unban
- * @group Actors - System users
- * @param {ActorPut.model} actor.body.required  - Actor updates
- * @returns {Actor}                      200 - Returns the current state for this actor
- * @returns {}                           401 - User is not authorized to perform this operation
- * @returns {DatabaseError}              500 - Database error
- */
-const unbanActor = (req, res) => {
-    // Necesita un administratorID autenticado, _id
-    // TODO
-};
 
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/actors`;
   router.get(apiURL+'/:actorId', getActor);
   router.post(apiURL, Validators.Required("body", "actor"), createActor); //TODO Check if role=Manager then auth user has to be Admin
-  router.put(apiURL+'/:actorId', Validators.Required("body", "actor"), updateActor);  //TODO Check for auth
-  router.put(apiURL+'/:actorId', CheckAdmin, Validators.Required("body", "actor"), banActor);
-  router.put(apiURL+'/:actorId', CheckAdmin, Validators.Required("body", "actor"), unbanActor);
+  router.put(apiURL, Validators.Required("body", "actor"), updateActor);  //TODO Check for auth
+  router.put(apiURL+'/:actorId/ban', banActor); //TODO Check for auth
 };
 
 /**
@@ -96,6 +121,16 @@ module.exports.register = (apiPrefix, router) => {
  * @property {Actor.model} actor - Actor to update
  */
 
+ /**
+ * @typedef ActorBan
+ * @property {boolean} isBanned - Ban status to update
+ */
+
+ /**
+ * @typedef Rol
+ * @property {string} rolName.required          - User role (explorer, manager, sponsor, administrator)
+ */
+
 /**
  * @typedef Actor
  * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
@@ -106,5 +141,6 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} address                   - User address
  * @property {string} password.required         - User password
  * @property {boolean} isBanned.required        - Ban status (true/false)
- * @property {string} rol.required              - User role (explorer, manager, sponsor, administrator)
+ * @property {Array.<Rol>} roles.required       - User roles (explorer, manager, sponsor, administrator)
  */
+
