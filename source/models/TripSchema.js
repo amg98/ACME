@@ -1,10 +1,14 @@
-import mongoose, { SchemaTypes } from "mongoose";
-
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+
 mongoose.set("useCreateIndex", true);
 
 const TripSchema = new Schema(
   {
+    managerID: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
     ticker: {
       type: String,
       required: [true],
@@ -31,15 +35,19 @@ const TripSchema = new Schema(
       required: [true],
     },
     pictures: [String],
-    cancelReason: Schema.Types.String,
-    cancelled: {
+    cancelReason: {
+      type: String,
+      required: [false],
+      default: "",
+    },
+    isCancelled: {
       type: Boolean,
-      required: [true],
+      required: [false],
       default: false,
     },
-    published: {
+    isPublished: {
       type: Boolean,
-      required: [true],
+      required: [false],
       default: false,
     },
     stages: [
@@ -48,7 +56,10 @@ const TripSchema = new Schema(
           type: String,
           required: [true],
         },
-        description: Schema.Types.String,
+        description: {
+          type: String,
+          required: [true],
+        },
         price: {
           type: Number,
           required: [true],
