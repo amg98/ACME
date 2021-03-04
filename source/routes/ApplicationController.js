@@ -165,7 +165,7 @@ const managerUpdate = (req, res) => {
     }
     else {
       if (application.status === "PENDING") {
-        let doc = await Application.findOneAndUpdate(req.params.applicationId, { status: req.body.status }, function (err, applicationUpdated) {
+        let doc = await Application.findOneAndUpdate(req.params.applicationId, { status: req.body.status, rejectedReason: req.body.rejectedReason }, function (err, applicationUpdated) {
           if (err) {
             res.send(err);
           }
@@ -221,9 +221,6 @@ module.exports.register = (apiPrefix, router) => {
 
 /**
  * @typedef Application
- * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
- * @property {string} status                    - Status
- * @property {string} comments                   - Comments
+ * @property {string} comments                  - Comments
  * @property {string} tripID.required           - Trip to apply
- * @property {string} createdAt                 - Creation date
  */

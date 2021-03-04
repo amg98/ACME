@@ -6,74 +6,73 @@ const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
 const ActorController = require("./routes/ActorController");
 const ApplicationController = require("./routes/ApplicationController");
+const TripController = require("./routes/TripController");
 
 class App {
+  constructor() {
+    this.app = express();
+    this.router = express.Router();
+    this.server = null;
+    this.port = process.env.PORT || 8080;
+    this.db = new DatabaseConnection();
 
-    constructor() {
-        this.app = express();
-        this.router = express.Router();
-        this.server = null;
-        this.port = process.env.PORT || 8080;
-        this.db = new DatabaseConnection();
+    this.app.use(cors()); // Needed for SwaggerUI TryIt
+    this.app.use(express.urlencoded({ extended: false }));
+    this.app.use(express.json());
+    this.app.use(this.router);
 
-        this.app.use(cors());       // Needed for SwaggerUI TryIt
-        this.app.use(express.urlencoded({ extended: false }));
-        this.app.use(express.json());
-        this.app.use(this.router);
+    // Route registration
+    const apiPrefix = swagger.getBasePath();
+    SponsorshipController.register(apiPrefix, this.router);
+    SystemParamsController.register(apiPrefix, this.router);
+    ActorController.register(apiPrefix, this.router);
+    TripController.register(apiPrefix, this.router);
+    ApplicationController.register(apiPrefix, this.router);
+    this.app.use(App.errorHandler);
 
-        // Route registration
-        const apiPrefix = swagger.getBasePath();
-        SponsorshipController.register(apiPrefix, this.router);
-        SystemParamsController.register(apiPrefix, this.router);
-        ActorController.register(apiPrefix, this.router);
-        ApplicationController.register(apiPrefix, this.router);
+    swagger.setupSwagger(this.app, this.port);
+  }
 
-        this.app.use(App.errorHandler);
+  static errorHandler(err, req, res, next) {
+    res.status(500).json({ msg: err });
+  }
 
-        swagger.setupSwagger(this.app, this.port);
-    }
+  run() {
+    return new Promise((resolve, reject) => {
+      process.on("SIGINT", () => {
+        console.log("[SERVER] Shut down requested by user");
+        this.stop().then(() => { });
+      });
 
-    static errorHandler(err, req, res, next) {
-        res.status(500).json({ msg: err });
-    }
+      this.db
+        .setup()
+        .then(() => {
+          this.server = this.app.listen(this.port, () => {
+            console.log(`[SERVER] Running at port ${this.port}`);
+            resolve();
+          });
+        })
+        .catch(reject);
+    });
+  }
 
-    run() {
-        return new Promise((resolve, reject) => {
+  stop() {
+    return new Promise((resolve, reject) => {
+      if (this.server == null) {
+        reject();
+        return;
+      }
 
-            process.on("SIGINT", () => {
-                console.log("[SERVER] Shut down requested by user");
-                this.stop().then(() => { });
-            });
-
-            this.db.setup()
-                .then(() => {
-                    this.server = this.app.listen(this.port, () => {
-                        console.log(`[SERVER] Running at port ${this.port}`);
-                        resolve();
-                    });
-                })
-                .catch(reject);
-        });
-    }
-
-    stop() {
-        return new Promise((resolve, reject) => {
-
-            if (this.server == null) {
-                reject();
-                return;
-            }
-
-            this.server.close(err => {
-                if(err) {
-                    reject(err);
-                } else {
-                    console.log("[SERVER] Closed successfully");
-                    this.db.close().then(resolve).catch(reject);
-                }
-            });
-        });
-    }
+      this.server.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log("[SERVER] Closed successfully");
+          this.db.close().then(resolve).catch(reject);
+        }
+      });
+    });
+  }
 }
 
 module.exports = App;

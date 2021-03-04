@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
+const Bcrypt = require("bcryptjs");
 const Schema = mongoose.Schema;
+
+const RolSchema = new Schema({
+    rol: {
+        type: String,
+        enum: ['MANAGER', 'EXPLORER', 'SPONSOR', 'ADMINISTRATOR'],
+        required: true
+    }
+    
+});
 
 const ActorSchema = new Schema({
     name: {
@@ -35,12 +45,28 @@ const ActorSchema = new Schema({
         type: Boolean,
         default: false
     },
-    rol: {
-        type: String,
-        enum: ['MANAGER', 'EXPLORER', 'SPONSOR', 'ADMINISTRATOR'],
-        required: true
+    roles: {
+        type: [RolSchema],
+        default: undefined
     }
 
 });
+
+ActorSchema.pre('save', function(next) {
+    if(!this.isModified("password")) {
+        return next();
+    }
+    this.password = Bcrypt.hashSync(this.password, 10);
+    next();
+});
+
+ActorSchema.pre('updateOne', async function() {
+    const docToUpdate = await this.model.findOne(this.getQuery())
+
+    if (docToUpdate.password !== this._update.password) {
+      const newPassword = Bcrypt.hashSync(this._update.password, 10)
+      this._update.password = newPassword
+    }
+  })
 
 module.exports = mongoose.model("Actor", ActorSchema);

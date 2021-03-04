@@ -1,14 +1,32 @@
+const { CheckSponsor } = require("../middlewares/Auth");
+const Validators = require("../middlewares/Validators");
+const SponsorshipSchema = require("../models/SponsorshipSchema");
+
 /**
  * Get a specific sponsorship for a sponsor
  * @route GET /sponsorships
  * @group Sponsorships - Trip advertising
  * @param {string} id.path              - Sponsorship identifier
- * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship
+ * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const get = (req, res) => {
-    // Necesita sponsorID autenticado
+const getSponsorship = async (req, res) => {
+    try {
+        let docs;
+        if (req.params.id) {
+            docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+        } else {
+            docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+        }
+        return res.status(200).json(docs);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -21,8 +39,16 @@ const get = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const createOne = (req, res) => {
-    // Necesita sponsorID autenticado
+const createSponsorship = async (req, res) => {
+    delete req.body.sponsorship._id;
+    delete req.body.sponsorship.isPaid;
+    req.body.sponsorship.sponsorID = req.sponsorID;
+    try {
+        const doc = await new SponsorshipSchema(req.body.sponsorship).save();
+        res.status(200).send(doc._id);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -35,8 +61,20 @@ const createOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const editOne = (req, res) => {
-    // Necesita sponsorID autenticado, _id
+const updateSponsorship = async (req, res) => {
+    delete req.body.sponsorship.isPaid;
+    delete req.body.sponsorship.sponsorID;
+    try {
+        let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.body.sponsorship._id, sponsorID: req.sponsorID }, req.body.sponsorship);
+        if(doc) {
+            doc = await SponsorshipSchema.findById(doc._id);
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -49,8 +87,17 @@ const editOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const deleteOne = (req, res) => {
-    // Necesita sponsorID autenticado, _id
+const deleteSponsorship = async (req, res) => {
+    try {
+        const doc = await SponsorshipSchema.findOneAndDelete({ _id: req.params.id, sponsorID: req.sponsorID });
+        if(doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -64,7 +111,8 @@ const deleteOne = (req, res) => {
  * @returns {}                      404 - Specified sponsorship does not exist
  * @returns {DatabaseError}         500 - Database error
  */
-const payment = (req, res) => {
+const createPayment = (req, res) => {
+    // TODO Validators.CheckPaymentData
     // Necesita sponsorID autenticado, _id
     // Devuelve URL para pagar
 };
@@ -81,12 +129,19 @@ const payment = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const confirmPayment = (req, res) => {
+    // TODO Validators.CheckConfirmData
     // Necesita sponsorID autenticado, _id
     // Necesita parámetros de paypal
 };
 
 module.exports.register = (apiPrefix, router) => {
-
+    const apiURL = `${apiPrefix}/sponsorships`;
+    router.get(`${apiURL}/:id?`, CheckSponsor, getSponsorship);
+    router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists(), createSponsorship);
+    router.put(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists(), updateSponsorship);
+    router.delete(`${apiURL}/:id?`, CheckSponsor, Validators.Required("params", "id"), deleteSponsorship);
+    router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckPaymentData("body", "paymentData"), createPayment);
+    router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.CheckConfirmData("body", "paymentData"), confirmPayment);
 };
 
 /**
