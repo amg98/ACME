@@ -6,6 +6,7 @@ const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
 const ActorController = require("./routes/ActorController");
 const TripController = require("./routes/TripController");
+const DashboardController = require("./routes/DashboardController");
 
 class App {
   constructor() {
@@ -26,6 +27,7 @@ class App {
     SystemParamsController.register(apiPrefix, this.router);
     ActorController.register(apiPrefix, this.router);
     TripController.register(apiPrefix, this.router);
+    DashboardController.register(apiPrefix, this.router);
 
     this.app.use(App.errorHandler);
 
