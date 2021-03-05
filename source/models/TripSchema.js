@@ -3,6 +3,8 @@ const Schema = mongoose.Schema;
 
 mongoose.set("useCreateIndex", true);
 
+const tstamp = { timestamps: { createdAt: "timeStamp" } };
+
 const TripSchema = new Schema(
   {
     managerID: {
@@ -37,18 +39,24 @@ const TripSchema = new Schema(
     pictures: [String],
     cancelReason: {
       type: String,
-      required: [false],
       default: "",
     },
     isCancelled: {
       type: Boolean,
-      required: [false],
       default: false,
     },
     isPublished: {
       type: Boolean,
-      required: [false],
       default: false,
+    },
+    price: {
+      type: Number,
+      min: [0],
+      default: function () {
+        return this.stages.reduce(function (acc, val) {
+          return acc + val.price;
+        }, 0);
+      },
     },
     stages: [
       {
@@ -68,17 +76,7 @@ const TripSchema = new Schema(
       },
     ],
   },
-  {
-    timestamps: {
-      createdAt: "timeStamp",
-    },
-  }
+  tstamp
 );
-
-TripSchema.virtual("price").get(function () {
-  return this.stages.reduce(function (acc, val) {
-    return acc + val.price;
-  }, 0);
-});
 
 module.exports = mongoose.model("Trip", TripSchema);

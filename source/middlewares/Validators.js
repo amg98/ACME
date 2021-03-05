@@ -1,3 +1,5 @@
+const Trip = require("../models/TripSchema");
+const Application = require("../models/ApplicationSchema");
 /**
  * @typedef ValidationError
  * @property {string} reason   - User-friendly reason message
@@ -53,10 +55,57 @@ module.exports.TripExists = () => (req, res, next) => {
   next();
 };
 
-//TODO what params should I use ?
 module.exports.CheckDates = (objectName, fieldName) => (req, res, next) => {
-  // TODO
-  // check if startDate is before endDate
-  // check if both occurs after current date
-  next();
+  startDate = new Date(req[objectName][fieldName]["startDate"]);
+  endDate = new Date(req[objectName][fieldName]["endDate"]);
+  currentDate = new Date();
+
+  if (startDate > currentDate && endDate > startDate) {
+    next();
+  } else {
+    res.status(400).json({ reason: "Date chosen wrongly" });
+  }
+};
+
+module.exports.CheckNotPublished = () => (req, res, next) => {
+  let id;
+  if (req.body.trip) {
+    id = req.body.trip._id;
+  } else {
+    id = req.params.id;
+  }
+  Trip.findOne({ _id: id }, function (err, trip) {
+    if (trip.isPublished) {
+      res.status(400).json({ reason: "The trip has already been published" });
+    } else {
+      next();
+    }
+  });
+};
+
+module.exports.CheckNotStarted = () => (req, res, next) => {
+  let id;
+  if (req.body.trip) {
+    id = req.body.trip._id;
+  } else {
+    id = req.params.id;
+  }
+  Trip.findOne({ _id: id }, function (err, trip) {
+    if (Date(trip.startDate) > Date.now()) {
+      res.status(400).json({ reason: "The trip has already started" });
+    } else {
+      next();
+    }
+  });
+};
+
+module.exports.CheckNoApplicationsAttached = () => (req, res, next) => {
+  //TODO
+  Application.find({ tripID: req.params.id }, function (err, docs) {
+    if (docs.length > 0) {
+      res.status(400).json({ reason: "This trip has applications associated" });
+    } else {
+      next();
+    }
+  });
 };
