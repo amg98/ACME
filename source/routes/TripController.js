@@ -193,7 +193,7 @@ const cancelTrip = async (req, res) => {
         _id: req.params.id,
         managerID: req.managerID,
       },
-      { isCancelled: true }
+      { isCancelled: true, cancellReason: req.body.cancellReason }
     );
     if (doc) {
       doc = await Trip.findById(req.params.id);
@@ -287,6 +287,7 @@ module.exports.register = (apiPrefix, router) => {
     `${apiURL}/cancel/:id?`,
     CheckManager,
     Validators.CheckNotPublished(),
+    Validators.Required("body", "cancellReason"),
     Validators.CheckNotStarted(),
     Validators.CheckNoApplicationsAttached(),
     cancelTrip
