@@ -5,6 +5,6 @@ module.exports = {
     },
     SUBSCRIPTION_PAYMENT_DESC: {
         eng: "Payment to sponsor a trip",
-        es: "Pago para patrocinar una excusión"
+        es: "Pago para patrocinar una excursión"
     }
 }

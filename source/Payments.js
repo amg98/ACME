@@ -13,27 +13,8 @@ module.exports.createPayment = ({ successURL, cancelURL, itemList, amount, descr
             },
             "transactions": [{
                 "item_list": {
-                    /*
-                    ItemList example
-                    ---
-                    [{
-                        "name": "Red Sox Hat",
-                        "sku": "001",
-                        "price": "25.00",
-                        "currency": "USD",
-                        "quantity": 1
-                    }]
-                    */
                     "items": itemList
                 },
-                /*
-                Amount example
-                ---
-                {
-                    "currency": "USD",
-                    "total": "25.00"
-                }
-                */
                 "amount": amount,
                 "description": description
             }]
@@ -45,7 +26,10 @@ module.exports.createPayment = ({ successURL, cancelURL, itemList, amount, descr
             } else {
                 for (let i = 0; i < payment.links.length; i++) {
                     if (payment.links[i].rel === 'approval_url') {
-                        resolve(payment.links[i].href);
+                        resolve({
+                            paymentURL: payment.links[i].href, 
+                            paymentID: payment.id
+                        });
                     }
                 }
             }
