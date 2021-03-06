@@ -42,7 +42,7 @@ describe("Sponsorship API", () => {
     it("Get missing sponsorship", () => {
         return makeRequest()
             .get(`${testURL}/${mongoose.Types.ObjectId().toHexString()}`)
-            .expect(200, []);
+            .expect(404);
     });
 
     it("Correct read only one", async () => {
@@ -57,11 +57,10 @@ describe("Sponsorship API", () => {
                     .expect(200);
             })
             .then(response => {
-                expect(response.body.length).to.equal(1);
-                expect(response.body[0].bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                expect(response.body[0].landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
-                expect(response.body[0].tripID).to.equal(sampleSponsorship[0].tripID);
-                expect(response.body[0].isPaid).to.equal(false);
+                expect(response.body.bannerURL).to.equal(sampleSponsorship[0].bannerURL);
+                expect(response.body.landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+                expect(response.body.tripID).to.equal(sampleSponsorship[0].tripID);
+                expect(response.body.isPaid).to.equal(false);
             });
     });
 
@@ -111,11 +110,10 @@ describe("Sponsorship API", () => {
                     .expect(200);
             })
             .then(response => {
-                expect(response.body.length).to.equal(1);
-                expect(response.body[0].bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                expect(response.body[0].landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
-                expect(response.body[0].tripID).to.equal(sampleSponsorship[0].tripID);
-                expect(response.body[0].isPaid).to.equal(false);
+                expect(response.body.bannerURL).to.equal(sampleSponsorship[0].bannerURL);
+                expect(response.body.landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+                expect(response.body.tripID).to.equal(sampleSponsorship[0].tripID);
+                expect(response.body.isPaid).to.equal(false);
             });
     });
 
@@ -161,10 +159,9 @@ describe("Sponsorship API", () => {
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
-                    .put(testURL)
+                    .put(`${testURL}/${response.body}`)
                     .send({
                         sponsorship: {
-                            _id: response.body,
                             bannerURL: newBannerURL
                         }
                     })
@@ -189,10 +186,9 @@ describe("Sponsorship API", () => {
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
-                    .put(testURL)
+                    .put(`${testURL}/${response.body}`)
                     .send({
                         sponsorship: {
-                            _id: response.body,
                             isPaid: true
                         }
                     })
@@ -212,10 +208,9 @@ describe("Sponsorship API", () => {
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
-                    .put(testURL)
+                    .put(`${testURL}/${response.body}`)
                     .send({
                         sponsorship: {
-                            _id: response.body,
                             sponsorID: newSponsorID
                         }
                     })

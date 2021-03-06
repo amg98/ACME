@@ -40,7 +40,7 @@ const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async 
     }
 };
 
-module.exports.CheckPaymentData = (objectName, fieldName) => (req, res, next) => {
+module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, next) => {
     try {
         await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
     } catch(errorCode) {
@@ -66,7 +66,7 @@ module.exports.CheckPaymentData = (objectName, fieldName) => (req, res, next) =>
     next();
 };
 
-module.exports.CheckConfirmData = (objectName, fieldName) => (req, res, next) => {
+module.exports.CheckConfirmData = (objectName, fieldName) => async (req, res, next) => {
     try {
         await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
     } catch(errorCode) {
