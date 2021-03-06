@@ -16,21 +16,21 @@ const Messages = require("../Messages");
  * @returns {DatabaseError}         500 - Database error
  */
 
- /**
- * Get all sponsorships for a sponsor
- * @route GET /sponsorships
- * @group Sponsorships - Trip advertising
- * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
- * @returns {}                      401 - User is not authorized to perform this operation
- * @returns {DatabaseError}         500 - Database error
- */
+/**
+* Get all sponsorships for a sponsor
+* @route GET /sponsorships
+* @group Sponsorships - Trip advertising
+* @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
+* @returns {}                      401 - User is not authorized to perform this operation
+* @returns {DatabaseError}         500 - Database error
+*/
 const getSponsorship = async (req, res) => {
     try {
         if (req.params.id) {
             const docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
                 .select("-sponsorID")
                 .exec();
-            if(docs.length > 0) {
+            if (docs.length > 0) {
                 return res.status(200).json(docs[0]);
             } else {
                 return res.sendStatus(404);
@@ -44,9 +44,6 @@ const getSponsorship = async (req, res) => {
     } catch (err) {
         res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -60,15 +57,15 @@ const getSponsorship = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const createSponsorship = async (req, res) => {
-  delete req.body.sponsorship._id;
-  delete req.body.sponsorship.isPaid;
-  req.body.sponsorship.sponsorID = req.sponsorID;
-  try {
-    const doc = await new SponsorshipSchema(req.body.sponsorship).save();
-    res.status(200).send(doc._id);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    delete req.body.sponsorship._id;
+    delete req.body.sponsorship.isPaid;
+    req.body.sponsorship.sponsorID = req.sponsorID;
+    try {
+        const doc = await new SponsorshipSchema(req.body.sponsorship).save();
+        res.status(200).send(doc._id);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
