@@ -29,44 +29,49 @@ module.exports.Range = (objectName, fieldName, minValue, maxValue) => (req, res,
     }
 };
 
-const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async (req) => {
+const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async (req, res) => {
     if (!req[objectName][subobjectName] || !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
         !req[objectName][subobjectName][fieldName]) {
-        return res.status(400).json({ reason: "Missing sponsorship ID" });
+        res.status(400).json({ reason: "Missing sponsorship ID" });
+        throw 400;
     }
 
     const id = req[objectName][subobjectName][fieldName];
-    const docs = await SponsorshipSchema.find({ _id: id, sponsorID: req.sponsorID }).exec();
+    let docs;
+    try {
+        docs = await SponsorshipSchema.find({ _id: id, sponsorID: req.sponsorID }).exec();
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+        throw 500;
+    }
 
     if (docs.length === 1) {
         if (docs[0].isPaid) {
+            res.sendStatus(401);
             throw 401;
         }
     } else {
+        res.sendStatus(404);
         throw 404;
     }
 };
 
 module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, next) => {
     try {
-        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
+        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req, res);
     } catch (errorCode) {
-        return res.sendStatus(errorCode);
+        return;
     }
 
     if (!req[objectName][fieldName].successURL || !req[objectName][fieldName].cancelURL) {
         return res.status(400).json({ reason: "Missing success/cancel URL" });
     }
 
-    if (!req[objectName][fieldName].paymentID || !req[objectName][fieldName].payerID) {
-        return res.status(400).json({ reason: "Missing paypal payment data" });
-    }
-
     if (!req[objectName][fieldName].lang) {
         return res.status(400).json({ reason: "Missing language" });
     }
 
-    if (req[objectName][fieldName].lang !== "eng" || req[objectName][fieldName].lang !== "es") {
+    if (req[objectName][fieldName].lang !== "eng" && req[objectName][fieldName].lang !== "es") {
         return res.status(400).json({ reason: "Invalid language" });
     }
 
@@ -75,9 +80,13 @@ module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, ne
 
 module.exports.CheckConfirmData = (objectName, fieldName) => async (req, res, next) => {
     try {
-        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
+        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req, res);
     } catch (errorCode) {
-        return res.sendStatus(errorCode);
+        return;
+    }
+
+    if (!req[objectName][fieldName].paymentID || !req[objectName][fieldName].payerID) {
+        return res.status(400).json({ reason: "Missing paypal payment data" });
     }
 
     next();

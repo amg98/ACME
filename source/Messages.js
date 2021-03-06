@@ -1,4 +1,4 @@
-module.exports.Messages = {
+module.exports = {
     SUBSCRIPTION_PAYMENT_NAME: {
         eng: "Sponsorship payment",
         es: "Pago de un patrocinio"
