@@ -2,6 +2,8 @@ const { CheckSponsor } = require("../middlewares/Auth");
 const Validators = require("../middlewares/Validators");
 const SponsorshipSchema = require("../models/SponsorshipSchema");
 const Payments = require("../Payments");
+const SystemParamsController = require("./SystemParamsController");
+const Messages = require("../Messages");
 
 /**
  * Get a specific sponsorship for a sponsor
@@ -114,12 +116,23 @@ const deleteSponsorship = async (req, res) => {
  */
 const createPayment = async (req, res) => {
     try {
+        const flatRate = await SystemParamsController.getFlatRate();
+
         const paymentURL = await Payments.createPayment({
             successURL: req.body.paymentData.successURL,
             cancelURL: req.body.paymentData.cancelURL,
-            itemList: null,     // TODO
-            amount: null,
-            description: null
+            itemList: [{
+                "name": Messages.SUBSCRIPTION_PAYMENT_NAME[req.body.paymentData.lang],
+                "sku": "001",
+                "price": flatRate.toString(),
+                "currency": "EUR",
+                "quantity": 1
+            }],
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
+            description: Messages.SUBSCRIPTION_PAYMENT_DESC[req.body.paymentData.lang],
         });
         return res.status(200).send(paymentURL);
     } catch (err) {
@@ -140,10 +153,16 @@ const createPayment = async (req, res) => {
  */
 const confirmPayment = (req, res) => {
     try {
+
+        const flatRate = await SystemParamsController.getFlatRate();
+
         await Payments.executePayment({
-            payerID: null,      // TODO
-            paymentID: null,
-            amount: null
+            payerID: req.body.confirmData.payerID,
+            paymentID: req.body.confirmData.paymentID,
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
         });
 
         try {
@@ -167,8 +186,8 @@ module.exports.register = (apiPrefix, router) => {
     router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists("body", "sponsorship", "tripID"), createSponsorship);
     router.put(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists("body", "sponsorship", "tripID"), updateSponsorship);
     router.delete(`${apiURL}/:id?`, CheckSponsor, Validators.Required("params", "id"), deleteSponsorship);
-    router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckSuccessCancelURL("body", "paymentData"), Validators.SponsorshipExistsAndNotPaid("body", "paymentData", "id"), createPayment);
-    router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.SponsorshipExistsAndNotPaid("body", "confirmData", "id"), confirmPayment);
+    router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckPaymentData("body", "paymentData"), createPayment);
+    router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.CheckConfirmData("body", "confirmData"), confirmPayment);
 };
 
 /**
@@ -192,9 +211,10 @@ module.exports.register = (apiPrefix, router) => {
 
 /**
  * @typedef SponsorshipPayment
- * @property {string} id                       - Sponsorship ID to pay
- * @property {string} successURL               - URL to redirect on payment success
- * @property {string} cancelURL                - URL to redirect on payment cancellation
+ * @property {string} id                        - Sponsorship ID to pay
+ * @property {string} successURL                - URL to redirect on payment success
+ * @property {string} cancelURL                 - URL to redirect on payment cancellation
+ * @property {string} lang                      - Language for descriptions. Available: eng/es
  */
 
 /**

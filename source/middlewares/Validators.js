@@ -23,7 +23,7 @@ module.exports.Range = (objectName, fieldName, minValue, maxValue) => (req, res,
     }
 };
 
-module.exports.SponsorshipExistsAndNotPaid = (objectName, subobjectName, fieldName) => async (req, res, next) => {
+const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async (req) => {
     if(!req[objectName][subobjectName] || !req[objectName][subobjectName].hasOwnProperty(fieldName) || !req[objectName][subobjectName][fieldName]) {
         return res.status(400).json({ reason: "Missing sponsorship ID" });
     }
@@ -33,18 +33,44 @@ module.exports.SponsorshipExistsAndNotPaid = (objectName, subobjectName, fieldNa
     
     if(docs.length === 1) {
         if(docs[0].isPaid) {
-            return res.sendStatus(401);
-        } else {
-            next();
+            throw 401;
         }
     } else {
-        return res.sendStatus(404);
+        throw 404;
     }
 };
 
-module.exports.CheckSuccessCancelURL = (objectName, fieldName) => (req, res, next) => {
+module.exports.CheckPaymentData = (objectName, fieldName) => (req, res, next) => {
+    try {
+        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
+    } catch(errorCode) {
+        return res.sendStatus(errorCode);
+    }
+
     if(!req[objectName][fieldName].successURL || !req[objectName][fieldName].cancelURL) {
         return res.status(400).json({ reason: "Missing success/cancel URL" });
+    }
+
+    if(!req[objectName][fieldName].paymentID || !req[objectName][fieldName].payerID) {
+        return res.status(400).json({ reason: "Missing paypal payment data" });
+    }
+
+    if(!req[objectName][fieldName].lang) {
+        return res.status(400).json({ reason: "Missing language" });
+    }
+
+    if(req[objectName][fieldName].lang !== "eng" || req[objectName][fieldName].lang !== "es") {
+        return res.status(400).json({ reason: "Invalid language" });
+    }
+
+    next();
+};
+
+module.exports.CheckConfirmData = (objectName, fieldName) => (req, res, next) => {
+    try {
+        await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req);
+    } catch(errorCode) {
+        return res.sendStatus(errorCode);
     }
 
     next();
