@@ -26,9 +26,8 @@ const Messages = require("../Messages");
  */
 const getSponsorship = async (req, res) => {
     try {
-        let docs;
         if (req.params.id) {
-            docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
+            const docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
                 .select("-sponsorID")
                 .exec();
             if(docs.length > 0) {
@@ -37,7 +36,7 @@ const getSponsorship = async (req, res) => {
                 return res.sendStatus(404);
             }
         } else {
-            docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
+            const docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
                 .select("-sponsorID")
                 .exec();
             return res.status(200).json(docs);
@@ -45,6 +44,9 @@ const getSponsorship = async (req, res) => {
     } catch (err) {
         res.status(500).json({ reason: "Database error" });
     }
+  } catch (err) {
+    res.status(500).json({ reason: "Database error" });
+  }
 };
 
 /**
@@ -58,15 +60,15 @@ const getSponsorship = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const createSponsorship = async (req, res) => {
-    delete req.body.sponsorship._id;
-    delete req.body.sponsorship.isPaid;
-    req.body.sponsorship.sponsorID = req.sponsorID;
-    try {
-        const doc = await new SponsorshipSchema(req.body.sponsorship).save();
-        res.status(200).send(doc._id);
-    } catch (err) {
-        res.status(500).json({ reason: "Database error" });
-    }
+  delete req.body.sponsorship._id;
+  delete req.body.sponsorship.isPaid;
+  req.body.sponsorship.sponsorID = req.sponsorID;
+  try {
+    const doc = await new SponsorshipSchema(req.body.sponsorship).save();
+    res.status(200).send(doc._id);
+  } catch (err) {
+    res.status(500).json({ reason: "Database error" });
+  }
 };
 
 /**

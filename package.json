@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Backend for ACME Explorer",
     "scripts": {
-        "start": "node -r dotenv/config source/boot.js dotenv_config_path=.devel.env",
+        "start": "nodemon -r dotenv/config source/boot.js dotenv_config_path=.devel.env",
         "start:prod": "node -r dotenv/config source/boot.js dotenv_config_path=.prod.env",
         "test": "mocha -j 1 -c -R spec 'test/**/*.js'",
         "coverage": "nyc npm run test"
@@ -29,6 +29,7 @@
         "@types/paypal-rest-sdk": "^1.7.5",
         "chai": "^4.3.0",
         "mocha": "^8.3.0",
+        "nodemon": "^2.0.7",
         "nyc": "^15.1.0",
         "supertest": "^6.1.3"
     },
