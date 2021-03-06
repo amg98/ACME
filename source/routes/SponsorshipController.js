@@ -28,7 +28,7 @@ const getSponsorship = async (req, res) => {
     try {
         if (req.params.id) {
             const docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
-                .select("-sponsorID")
+                .select("-sponsorID -paymentID")
                 .exec();
             if (docs.length > 0) {
                 return res.status(200).json(docs[0]);
@@ -59,6 +59,7 @@ const getSponsorship = async (req, res) => {
 const createSponsorship = async (req, res) => {
     delete req.body.sponsorship._id;
     delete req.body.sponsorship.isPaid;
+    delete req.body.sponsorship.paymentID;
     req.body.sponsorship.sponsorID = req.sponsorID;
     try {
         const doc = await new SponsorshipSchema(req.body.sponsorship).save();
@@ -83,6 +84,7 @@ const updateSponsorship = async (req, res) => {
     delete req.body.sponsorship._id;
     delete req.body.sponsorship.isPaid;
     delete req.body.sponsorship.sponsorID;
+    delete req.body.sponsorship.paymentID;
     try {
         let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.params.id, sponsorID: req.sponsorID }, req.body.sponsorship);
         if (doc) {
@@ -134,7 +136,7 @@ const createPayment = async (req, res) => {
     try {
         const flatRate = await SystemParamsController.getFlatRate();
 
-        const paymentURL = await Payments.createPayment({
+        const payment = await Payments.createPayment({
             successURL: req.body.paymentData.successURL,
             cancelURL: req.body.paymentData.cancelURL,
             itemList: [{
@@ -150,7 +152,17 @@ const createPayment = async (req, res) => {
             },
             description: Messages.SUBSCRIPTION_PAYMENT_DESC[req.body.paymentData.lang],
         });
-        return res.status(200).send(paymentURL);
+
+        try {
+            let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.body.paymentData.id, sponsorID: req.sponsorID }, { paymentID: payment.paymentID });
+            if (!doc) {
+                throw "Database error";
+            }
+        } catch (err) {
+            res.status(500).json({ reason: "Database error" });
+        }
+
+        return res.status(200).send(payment.paymentURL);
     } catch (err) {
         res.status(500).json({ reason: "Payment error" });
     }
@@ -182,7 +194,11 @@ const confirmPayment = async (req, res) => {
         });
 
         try {
-            let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.body.confirmData.id, sponsorID: req.sponsorID }, { isPaid: true });
+            let doc = await SponsorshipSchema.findOneAndUpdate({
+                _id: req.body.confirmData.id,
+                sponsorID: req.sponsorID,
+                paymentID: req.body.confirmData.paymentID
+            }, { isPaid: true });
             if (doc) {
                 return res.sendStatus(204);
             } else {
