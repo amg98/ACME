@@ -1,35 +1,49 @@
 const { CheckSponsor } = require("../middlewares/Auth");
 const Validators = require("../middlewares/Validators");
 const SponsorshipSchema = require("../models/SponsorshipSchema");
+const Payments = require("../Payments");
+const SystemParamsController = require("./SystemParamsController");
+const Messages = require("../Messages");
 
 /**
  * Get a specific sponsorship for a sponsor
- * @route GET /sponsorships
+ * @route GET /sponsorships/{id}
  * @group Sponsorships - Trip advertising
- * @param {string} id.path              - Sponsorship identifier
+ * @param {string} id.path.required     - Sponsorship identifier
  * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Sponsorship not found
  * @returns {DatabaseError}         500 - Database error
  */
+
+/**
+* Get all sponsorships for a sponsor
+* @route GET /sponsorships
+* @group Sponsorships - Trip advertising
+* @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
+* @returns {}                      401 - User is not authorized to perform this operation
+* @returns {DatabaseError}         500 - Database error
+*/
 const getSponsorship = async (req, res) => {
-  try {
-    let docs;
-    if (req.params.id) {
-      docs = await SponsorshipSchema.find({
-        _id: req.params.id,
-        sponsorID: req.sponsorID,
-      })
-        .select("-sponsorID")
-        .exec();
-    } else {
-      docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
-        .select("-sponsorID")
-        .exec();
+    try {
+        if (req.params.id) {
+            const docs = await SponsorshipSchema.find({ _id: req.params.id, sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+            if (docs.length > 0) {
+                return res.status(200).json(docs[0]);
+            } else {
+                return res.sendStatus(404);
+            }
+        } else {
+            const docs = await SponsorshipSchema.find({ sponsorID: req.sponsorID })
+                .select("-sponsorID")
+                .exec();
+            return res.status(200).json(docs);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-    return res.status(200).json(docs);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -43,21 +57,22 @@ const getSponsorship = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const createSponsorship = async (req, res) => {
-  delete req.body.sponsorship._id;
-  delete req.body.sponsorship.isPaid;
-  req.body.sponsorship.sponsorID = req.sponsorID;
-  try {
-    const doc = await new SponsorshipSchema(req.body.sponsorship).save();
-    res.status(200).send(doc._id);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    delete req.body.sponsorship._id;
+    delete req.body.sponsorship.isPaid;
+    req.body.sponsorship.sponsorID = req.sponsorID;
+    try {
+        const doc = await new SponsorshipSchema(req.body.sponsorship).save();
+        res.status(200).send(doc._id);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
  * Update an existing sponsorship for a specific sponsor
- * @route PUT /sponsorships
+ * @route PUT /sponsorships/{id}
  * @group Sponsorships - Trip advertising
+ * @param {string} id.path.required     - Sponsorship identifier
  * @param {SponsorshipPut.model} sponsorship.body.required  - Sponsorship updates
  * @returns {Sponsorship}           200 - Returns the current state for this sponsorship
  * @returns {ValidationError}       400 - Supplied parameters are invalid
@@ -65,27 +80,25 @@ const createSponsorship = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const updateSponsorship = async (req, res) => {
-  delete req.body.sponsorship.isPaid;
-  delete req.body.sponsorship.sponsorID;
-  try {
-    let doc = await SponsorshipSchema.findOneAndUpdate(
-      { _id: req.body.sponsorship._id, sponsorID: req.sponsorID },
-      req.body.sponsorship
-    );
-    if (doc) {
-      doc = await SponsorshipSchema.findById(doc._id);
-      return res.status(200).json(doc);
-    } else {
-      return res.sendStatus(401);
+    delete req.body.sponsorship._id;
+    delete req.body.sponsorship.isPaid;
+    delete req.body.sponsorship.sponsorID;
+    try {
+        let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.params.id, sponsorID: req.sponsorID }, req.body.sponsorship);
+        if (doc) {
+            doc = await SponsorshipSchema.findById(doc._id);
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
  * Delete an existing sponsorship for a specific sponsor
- * @route DELETE /sponsorships
+ * @route DELETE /sponsorships/{id}
  * @group Sponsorships - Trip advertising
  * @param {string} id.path.required     - Sponsorship identifier
  * @returns {Sponsorship}           200 - Returns the deleted sponsorship
@@ -94,19 +107,16 @@ const updateSponsorship = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const deleteSponsorship = async (req, res) => {
-  try {
-    const doc = await SponsorshipSchema.findOneAndDelete({
-      _id: req.params.id,
-      sponsorID: req.sponsorID,
-    });
-    if (doc) {
-      return res.status(200).json(doc);
-    } else {
-      return res.sendStatus(401);
+    try {
+        const doc = await SponsorshipSchema.findOneAndDelete({ _id: req.params.id, sponsorID: req.sponsorID });
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -118,12 +128,32 @@ const deleteSponsorship = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Specified sponsorship does not exist
- * @returns {DatabaseError}         500 - Database error
+ * @returns {DatabaseError}         500 - Database or payment error
  */
-const createPayment = (req, res) => {
-  // TODO Validators.CheckPaymentData
-  // Necesita sponsorID autenticado, _id
-  // Devuelve URL para pagar
+const createPayment = async (req, res) => {
+    try {
+        const flatRate = await SystemParamsController.getFlatRate();
+
+        const paymentURL = await Payments.createPayment({
+            successURL: req.body.paymentData.successURL,
+            cancelURL: req.body.paymentData.cancelURL,
+            itemList: [{
+                "name": Messages.SUBSCRIPTION_PAYMENT_NAME[req.body.paymentData.lang],
+                "sku": "001",
+                "price": flatRate.toString(),
+                "currency": "EUR",
+                "quantity": 1
+            }],
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
+            description: Messages.SUBSCRIPTION_PAYMENT_DESC[req.body.paymentData.lang],
+        });
+        return res.status(200).send(paymentURL);
+    } catch (err) {
+        res.status(500).json({ reason: "Payment error" });
+    }
 };
 
 /**
@@ -131,55 +161,49 @@ const createPayment = (req, res) => {
  * @route POST /sponsorships/payment-confirm
  * @group Sponsorships - Trip advertising
  * @param {SponsorshipPaymentConfirm.model} confirmData.body.required    - Payment confirmation data
- * @returns {}                      200 - Payment has been confirmed successfully
+ * @returns {}                      204 - Payment has been confirmed successfully
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Specified sponsorship does not exist
  * @returns {DatabaseError}         500 - Database error
  */
-const confirmPayment = (req, res) => {
-  // TODO Validators.CheckConfirmData
-  // Necesita sponsorID autenticado, _id
-  // Necesita parámetros de paypal
+const confirmPayment = async (req, res) => {
+    try {
+
+        const flatRate = await SystemParamsController.getFlatRate();
+
+        await Payments.executePayment({
+            payerID: req.body.confirmData.payerID,
+            paymentID: req.body.confirmData.paymentID,
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
+        });
+
+        try {
+            let doc = await SponsorshipSchema.findOneAndUpdate({ _id: req.body.confirmData.id, sponsorID: req.sponsorID }, { isPaid: true });
+            if (doc) {
+                return res.sendStatus(204);
+            } else {
+                throw "Database error";
+            }
+        } catch (err) {
+            res.status(500).json({ reason: "Database error" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Payment error" });
+    }
 };
 
 module.exports.register = (apiPrefix, router) => {
-  const apiURL = `${apiPrefix}/sponsorships`;
-  router.get(`${apiURL}/:id?`, CheckSponsor, getSponsorship);
-  router.post(
-    apiURL,
-    CheckSponsor,
-    Validators.Required("body", "sponsorship"),
-    Validators.TripExists(),
-    createSponsorship
-  );
-  router.put(
-    apiURL,
-    CheckSponsor,
-    Validators.Required("body", "sponsorship"),
-    Validators.TripExists(),
-    updateSponsorship
-  );
-  router.delete(
-    `${apiURL}/:id?`,
-    CheckSponsor,
-    Validators.Required("params", "id"),
-    deleteSponsorship
-  );
-  router.post(
-    `${apiURL}/payment`,
-    CheckSponsor,
-    Validators.Required("body", "paymentData"),
-    Validators.CheckPaymentData("body", "paymentData"),
-    createPayment
-  );
-  router.post(
-    `${apiURL}/payment-confirm`,
-    CheckSponsor,
-    Validators.Required("body", "confirmData"),
-    Validators.CheckConfirmData("body", "paymentData"),
-    confirmPayment
-  );
+    const apiURL = `${apiPrefix}/sponsorships`;
+    router.get(`${apiURL}/:id?`, CheckSponsor, getSponsorship);
+    router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists("body", "sponsorship", "tripID"), createSponsorship);
+    router.put(`${apiURL}/:id?`, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.Required("params", "id"), Validators.TripExists("body", "sponsorship", "tripID"), updateSponsorship);
+    router.delete(`${apiURL}/:id?`, CheckSponsor, Validators.Required("params", "id"), deleteSponsorship);
+    router.post(`${apiURL}/payment`, CheckSponsor, Validators.Required("body", "paymentData"), Validators.CheckPaymentData("body", "paymentData"), createPayment);
+    router.post(`${apiURL}/payment-confirm`, CheckSponsor, Validators.Required("body", "confirmData"), Validators.CheckConfirmData("body", "confirmData"), confirmPayment);
 };
 
 /**
@@ -203,9 +227,10 @@ module.exports.register = (apiPrefix, router) => {
 
 /**
  * @typedef SponsorshipPayment
- * @property {string} id                       - Sponsorship ID to pay
- * @property {string} successURL               - URL to redirect on payment success
- * @property {string} cancelURL                - URL to redirect on payment cancellation
+ * @property {string} id                        - Sponsorship ID to pay
+ * @property {string} successURL                - URL to redirect on payment success
+ * @property {string} cancelURL                 - URL to redirect on payment cancellation
+ * @property {string} lang                      - Language for descriptions. Available: eng/es
  */
 
 /**
