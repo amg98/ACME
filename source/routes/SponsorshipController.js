@@ -123,7 +123,7 @@ const deleteSponsorship = async (req, res) => {
  * Generate a paypal URL for a sponsorship payment
  * @route POST /sponsorships/payment
  * @group Sponsorships - Trip advertising
- * @param {SponsorshipPayment.model} paymentData.body.required    - Payment data
+ * @param {SponsorshipPaymentPost.model} paymentData.body.required    - Payment data
  * @returns {string}                200 - Returns the paypal URL, which can be used to pay
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -160,7 +160,7 @@ const createPayment = async (req, res) => {
  * Confirm a paypal payment for a sponsorship
  * @route POST /sponsorships/payment-confirm
  * @group Sponsorships - Trip advertising
- * @param {SponsorshipPaymentConfirm.model} confirmData.body.required    - Payment confirmation data
+ * @param {SponsorshipPaymentConfirmPost.model} confirmData.body.required    - Payment confirmation data
  * @returns {}                      204 - Payment has been confirmed successfully
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -225,12 +225,22 @@ module.exports.register = (apiPrefix, router) => {
  * @property {boolean} isPaid                   - Is this sponsorship paid? (ignored in POST/PUT requests)
  */
 
+ /**
+ * @typedef SponsorshipPaymentPost
+ * @property {SponsorshipPayment.model} paymentData - Sponsorship to add
+ */
+
 /**
  * @typedef SponsorshipPayment
  * @property {string} id                        - Sponsorship ID to pay
  * @property {string} successURL                - URL to redirect on payment success
  * @property {string} cancelURL                 - URL to redirect on payment cancellation
  * @property {string} lang                      - Language for descriptions. Available: eng/es
+ */
+
+ /**
+ * @typedef SponsorshipPaymentConfirmPost
+ * @property {SponsorshipPaymentConfirm.model} confirmData - Sponsorship to update
  */
 
 /**
