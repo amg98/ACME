@@ -3,9 +3,9 @@ const Trip = require("../models/TripSchema");
 
 /**
  * Get a specific finder for an actor
- * @route GET /finders
+ * @route GET /finders/{finderId}
  * @group Finder - Find trips
- * @param {string} id.path              - Actor identifier
+ * @param {string} finderId.path.required             - Actor identifier
  * @returns {Finder}                200 - Returns the requested Finder
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
@@ -47,7 +47,7 @@ const getOne = (req, res) => {
  * Create a new finder
  * @route POST /finders
  * @group Finder - Find trips
- * @param {FinderPost.model} finder.body.required  - New finder
+ * @param {Finder.model} finder.body.required  - New finder
  * @returns {string}                200 - Returns the finder identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -78,8 +78,13 @@ const createOne = (req, res) => {
         dateEnd: req.body.dateEnd,
         trips: trips
     }
-    const doc = new Finder(finder).save();
-    return res.status(201).send(doc);
+
+    try {
+        const doc = await new Finder(finder).save();
+        res.status(200).send(doc);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -108,9 +113,9 @@ const editOne = (req, res) => {
 
 /**
  * Delete an existing finder for a specific actor
- * @route DELETE /finders
+ * @route DELETE /finders/{finderId}
  * @group Finder - Find trips
- * @param {string} id.path.required     - Finder identifier
+ * @param {string} finderId.path.required     - Finder identifier
  * @returns {Finder}                200 - Returns the deleted finder
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -118,10 +123,16 @@ const editOne = (req, res) => {
  */
 const deleteOne = (req, res) => {
     // Necesita actorID autenticado, _id
-    Finder.deleteOne({ _id: req.params.id }, function (err) {
-        if (err) return handleError(err);
-        res.status(200)
-    });
+    try {
+        const doc = await Finder.findOneAndDelete({ _id: req.params.finderId });
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(401);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 module.exports.register = (apiPrefix, router) => {
@@ -133,21 +144,10 @@ module.exports.register = (apiPrefix, router) => {
 };
 
 /**
- * @typedef FinderPost
- * @property {Finder.model} finder - New Finder
- */
-
-/**
- * @typedef FinderPut
- * @property {Finder.model} finder - Finder to update
- */
-
-/**
  * @typedef Finder
- * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
- * @property {string} keyword.required          - Keyword for search
- * @property {string} minPrice.required         - Min Trip Price
- * @property {string} maxPrice.required         - Max Trip Price
- * @property {string} dateInit.required         - Date Init
- * @property {string} dateEnd.required          - End Date
+ * @property {string} keyword          - Keyword for search
+ * @property {string} minPrice         - Min Trip Price
+ * @property {string} maxPrice         - Max Trip Price
+ * @property {string} dateInit         - Date Init
+ * @property {string} dateEnd          - End Date
  */
