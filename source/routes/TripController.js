@@ -40,7 +40,7 @@ const getMyTrips = async (req, res) => {
 
 /**
  * Get one trip by id
- * @route GET /trips/display
+ * @route GET /trips/display/{id}
  * @group Trip - Trip
  * @param {string} id.path.required     - Sponsorship identifier
  * @returns {Trip}   200 - Return selected trip
@@ -59,7 +59,7 @@ const getTrip = async (req, res) => {
 
 /**
  * Search trips by title, desc or ticker
- * @route GET /trips/search
+ * @route GET /trips/search/{keyword}
  * @group Trip - Trip
  * @param {string} keyword.query - Keyword contained wether in ticker, title or desc.
  * @returns {Array.<Trip>}   200 - Returns Trips matching parameters
@@ -112,9 +112,9 @@ const createTrip = async (req, res) => {
 
 /**
  * Update trip
- * @route PUT /trips
+ * @route PUT /trips/{id}
  * @group Trip - Trip
- * @param {TripUpdate.model} trip.body.required  - Trip updates
+ * @param {TripUpdate.model} trip.path.required  - Trip updates
  * @returns {Trip.model}                200 - Returns the created trip
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -153,10 +153,10 @@ const updateTrip = async (req, res) => {
 
 /**
  * Delete an existing trip not published yet
- * @route DELETE /trips
+ * @route DELETE /trips/{id}
  * @group Trip - Trip
  * @param {string} id.path.required     - Trip identifier
- * @returns {Trip}           200 - Returns the deleted trip
+ * @returns {Trip.model}           200 - Returns the deleted trip
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
@@ -179,9 +179,10 @@ const deleteTrip = async (req, res) => {
 
 /**
  * Cancel trip as long as is not published, started and free from applications
- * @route PUT /trips/cancel
+ * @route PUT /trips/cancel/{id}
  * @group Trip - Trip
  * @returns {Trip.model}                200 - Returns the created trip
+ * @param {string} id.path.required     - Trip identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
@@ -208,9 +209,10 @@ const cancelTrip = async (req, res) => {
 
 /**
  * Publish trip
- * @route PUT /trips/publish
+ * @route PUT /trips/publish/{id}
  * @group Trip - Trip
  * @returns {Trip.model}                200 - Returns the created trip
+ * @param {string} id.path.required     - Trip identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
