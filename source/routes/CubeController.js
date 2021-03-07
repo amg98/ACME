@@ -3,7 +3,7 @@ const YearCube = require("../models/YearCubeSchema");
 
 /**
  * Get the cube amount for given explorer and months
- * @route GET /cubes/:months
+ * @route GET /cubes/{months}
  * @group Cubes - Cubes computation
  * @param {string} explorerID.path.required       - Explorer identifier
  * @param {string} month.path.required            - Months to query (M01-M36)
@@ -17,7 +17,7 @@ const getMonthCube = (req, res) => {
 
 /**
  * Get the cube amount for given explorer and years
- * @route GET /cubes/:years
+ * @route GET /cubes/{years}
  * @group Cubes - Cubes computation
  * @param {string} explorerID.path.required       - Explorer identifier
  * @param {string} year.path.required             - Years to query (Y01-Y03)
