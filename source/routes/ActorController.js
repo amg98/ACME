@@ -1,6 +1,6 @@
 const Actor = require("../models/ActorSchema");
 const Validators = require("../middlewares/Validators");
-const admin = require('firebase-admin');
+// const admin = require('firebase-admin');
 
 // const { CheckAdmin } = require("../middlewares/Auth");
 /**
