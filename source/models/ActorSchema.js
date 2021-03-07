@@ -2,15 +2,6 @@ const mongoose = require("mongoose");
 const Bcrypt = require("bcryptjs");
 const Schema = mongoose.Schema;
 
-const RolSchema = new Schema({
-    rol: {
-        type: String,
-        enum: ['MANAGER', 'EXPLORER', 'SPONSOR', 'ADMINISTRATOR'],
-        required: true
-    }
-    
-});
-
 const ActorSchema = new Schema({
     name: {
         type: String,
@@ -45,10 +36,11 @@ const ActorSchema = new Schema({
         type: Boolean,
         default: false
     },
-    roles: {
-        type: [RolSchema],
-        default: undefined
-    }
+    roles: [{
+        type: String,
+        enum: ['MANAGER', 'EXPLORER', 'SPONSOR', 'ADMINISTRATOR'],
+        required: true
+    }]
 
 });
 
