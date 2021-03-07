@@ -6,6 +6,7 @@ const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
 const paypal = require("paypal-rest-sdk");
 const ActorController = require("./routes/ActorController");
+const ApplicationController = require("./routes/ApplicationController");
 const TripController = require("./routes/TripController");
 const DashboardController = require("./routes/DashboardController");
 
