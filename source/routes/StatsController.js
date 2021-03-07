@@ -5,9 +5,9 @@ const { CheckAdmin } = require("../middlewares/Auth");
 /**
  * The average, the minimum, the maximum, and the standard deviation of the
  * number of trips managed per manager
- * @route GET /dashboard/trips-per-manager
- * @group Dashboard
- * @returns {Results}   200 - Returns the query
+ * @route GET /stats/trips-per-manager
+ * @group Stats
+ * @returns {Results.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
@@ -24,9 +24,9 @@ const tripsPerManager = async (req, res) => {
 /**
  * The average, the minimum, the maximum, and the standard deviation of the
  * number of applications per trip
- * @route GET /dashboard/applications-per-trip
- * @group Dashboard
- * @returns {Results}   200 - Returns the query
+ * @route GET /stats/applications-per-trip
+ * @group Stats
+ * @returns {Results.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
@@ -44,9 +44,9 @@ const applicationsPerTrip = async (req, res) => {
  * Theaverage, the minimum, the maximum, and the
  * standard deviation of the
  * number of trips price per trips
- * @route GET /dashboard/price-per-trips
- * @group Dashboard
- * @returns {Results}   200 - Returns the query
+ * @route GET /stats/price-per-trips
+ * @group Stats
+ * @returns {Results.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
@@ -62,9 +62,9 @@ const pricePerTrips = async (req, res) => {
 
 /**
  * The ratio of applications grouped by status
- * @route GET /dashboard/applications-ratio
- * @group Dashboard
- * @returns {ApplicationRatio}   200 - Returns the query
+ * @route GET /stats/applications-ratio
+ * @group Stats
+ * @returns {ApplicationRatio.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
@@ -80,9 +80,9 @@ const applicationsRatio = async (req, res) => {
 
 /**
  * The average price range that explorers indicate in their finders
- * @route GET /dashboard/avg-price-finder
- * @group Dashboard
- * @returns {number}   200 - Returns the avg price in finders
+ * @route GET /stats/avg-price-finder
+ * @group Stats
+ * @returns {number.model}   200 - Returns the avg price in finders
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
@@ -98,8 +98,8 @@ const avgPriceFinder = async (req, res) => {
 
 /**
  * The average price range that explorers indicate in their finders
- * @route GET /dashboard/top-keywords
- * @group Dashboard
+ * @route GET /stats/top-keywords
+ * @group Stats
  * @returns {Array<Keyword>}   200 - Returns the avg price in finders
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
@@ -115,7 +115,7 @@ const topTenKeywords = async (req, res) => {
 };
 
 module.exports.register = (apiPrefix, router) => {
-  const apiURL = `${apiPrefix}/dashboard`;
+  const apiURL = `${apiPrefix}/stats`;
   router.get(`${apiURL}/trips-per-manager`, CheckAdmin, tripsPerManager);
   router.get(
     `${apiURL}/applications-per-trip`,
