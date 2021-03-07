@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const sponsorID = mongoose.Types.ObjectId().toHexString();
 
 module.exports.CheckAdmin = (req, res, next) => {
     // TODO
@@ -10,7 +9,7 @@ module.exports.CheckAdmin = (req, res, next) => {
 module.exports.CheckSponsor = (req, res, next) => {
     // TODO
     // Devolver 401 sin mensaje en caso de no autorizado
-    req.sponsorID = sponsorID;
+    req.sponsorID = mongoose.Types.ObjectId("6043832192d9363acca82510");
     next();
 };
 

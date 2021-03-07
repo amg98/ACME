@@ -31,3 +31,6 @@ jobs:
           PORT: 8080
           DBSTRING: mongodb://localhost:27017/acme-explorer-test
           SWAGGER_SCHEMA: http
+          PAYPAL_MODE: sandbox
+          PAYPAL_CLIENT_ID: ${{secrets.PAYPAL_CLIENT_ID}}
+          PAYPAL_CLIENT_SECRET: ${{secrets.PAYPAL_CLIENT_SECRET}}

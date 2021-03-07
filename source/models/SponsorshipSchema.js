@@ -24,7 +24,8 @@ const SponsorshipSchema = new Schema({
         type: Schema.Types.Boolean,
         required: true,
         default: false
-    }
+    },
+    paymentID: Schema.Types.String
 });
 
 module.exports = mongoose.model("Sponsorship", SponsorshipSchema);

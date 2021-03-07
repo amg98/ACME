@@ -13,6 +13,9 @@ Environment variables:
 - DBSTRING: database connection string. Example: mongodb://localhost:27017/acme-explorer
 - HOSTNAME: only needed in production environment. It shouldn't be set in any other one
 - SWAGGER_SCHEMA: http or https. It is used for Swagger "Try it" operations
+- PAYPAL_MODE: "sandbox" or "live". Use sandbox if you don't want to get charged
+- PAYPAL_CLIENT_ID: Client ID of a Paypal business account
+- PAYPAL_CLIENT_SECRET: Paypal business account REST API secret
 
 ## API Documentation
 [Swagger docs](https://acmeexplorer.herokuapp.com/api-docs)
