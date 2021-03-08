@@ -1,5 +1,7 @@
 const { resetDB, makeRequest } = require("../utils");
 const mongoose = require("mongoose");
+const TripSchema = require("../../source/models/TripSchema");
+const SponsorshipSchema = require("../../source/models/SponsorshipSchema");
 const { expect } = require("chai");
 
 describe("Sponsorship API", () => {
@@ -218,6 +220,47 @@ describe("Sponsorship API", () => {
             })
             .then(response => {
                 expect(response.body.sponsorID).not.to.be.equal(newSponsorID);
+            });
+    });
+
+    it("Get random sponsorship for trip", async () => {
+        const tripID = mongoose.Types.ObjectId();
+        await TripSchema.collection.insertOne({
+            _id: tripID
+        });
+
+        const bakeSShip = (id) => ({
+            tripID: tripID,
+            bannerURL: `https://${id}.com`,
+            landingPageURL: `https://${id}.com`,
+            isPaid: true,
+        });
+
+        const sponsorships = [];
+        for (let i = 0; i < 10; i++) {
+            sponsorships.push(bakeSShip(i));
+        }
+
+        await SponsorshipSchema.collection.insertMany(sponsorships);
+
+        return makeRequest()
+            .get(`/api/v1/trips/${tripID.toHexString()}/random-sponsorship`)
+            .expect(200)
+    });
+
+    it("Missing tripID for random sponsorship", () => {
+        return makeRequest()
+            .get(`/api/v1/trips/${mongoose.Types.ObjectId()}/random-sponsorship`)
+            .expect(404)
+            .then(() => {
+                return makeRequest()
+                    .get(`/api/v1/trips//random-sponsorship`)
+                    .expect(404);
+            })
+            .then(() => {
+                return makeRequest()
+                    .get(`/api/v1/trips/123/random-sponsorship`)
+                    .expect(500, { reason: "Database error" });
             });
     });
 });
