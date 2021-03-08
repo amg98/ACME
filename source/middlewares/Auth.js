@@ -1,26 +1,151 @@
-const mongoose = require("mongoose");
+const admin = require('firebase-admin');
+const Actor = require("../models/ActorSchema");
 
 module.exports.CheckAdmin = (req, res, next) => {
-    // TODO
-    // Devolver 401 sin mensaje en caso de no autorizado
-    next();
+    const headerToken = req.headers.authorization;
+
+    if(!isValidHeaderToken(headerToken)){
+        return res.status(401).json({ message: "No token provided or invalid one" });
+    }
+
+    const idToken = headerToken.split(" ")[1];
+    admin.auth().verifyIdToken(idToken)
+        .then((decodedToken) => {
+            var uid = decodedToken.uid; // email
+
+            Actor.findOne({email: uid}, function(err, obj) { 
+                if(err) {
+                    return res.status(404).json({"error": "Actor not found"});
+                }
+                var loggedActor = obj;
+                req.adminID = loggedActor._id;
+                next()
+            })
+        })
+        .catch(() => res.status(401).end())
 };
 
 module.exports.CheckSponsor = (req, res, next) => {
-    // TODO
-    // Devolver 401 sin mensaje en caso de no autorizado
-    req.sponsorID = mongoose.Types.ObjectId("6043832192d9363acca82510");
-    next();
+    const headerToken = req.headers.authorization;
+  
+    if(!isValidHeaderToken(headerToken)){
+        return res.status(401).json({ message: "No token provided or invalid one" });
+    }
+    
+    const idToken = headerToken.split(" ")[1];
+    admin.auth().verifyIdToken(idToken)
+        .then((decodedToken) => {
+            var uid = decodedToken.uid; // email
+
+            Actor.findOne({email: uid}, function(err, obj) { 
+                if(err) {
+                    return res.status(404).json({"error": "Actor not found"});
+                }
+                var loggedActor = obj;
+                req.sponsorID = loggedActor._id;
+                next()
+            })
+        })
+        .catch(() => res.status(401).end())
 };
 
 module.exports.CheckExplorer = (req, res, next) => {
-    // TODO
-    // Devolver 401 sin mensaje en caso de no autorizado
-    next();
+    const headerToken = req.headers.authorization;
+  
+    if(!isValidHeaderToken(headerToken)){
+        return res.status(401).json({ message: "No token provided or invalid one" });
+    }
+    
+    const idToken = headerToken.split(" ")[1];
+    admin.auth().verifyIdToken(idToken)
+        .then((decodedToken) => {
+            var uid = decodedToken.uid; // email
+
+            Actor.findOne({email: uid}, function(err, obj) { 
+                if(err) {
+                    return res.status(404).json({"error": "Actor not found"});
+                }
+                var loggedActor = obj;
+                req.explorerID = loggedActor._id;
+                next()
+            })
+        })
+        .catch(() => res.status(401).end())
 };
 
 module.exports.CheckManager = (req, res, next) => {
-    // TODO
-    // Devolver 401 sin mensaje en caso de no autorizado
-    next();
+    const headerToken = req.headers.authorization;
+  
+    if(!isValidHeaderToken(headerToken)){
+        return res.status(401).json({ message: "No token provided or invalid one" });
+    }
+    
+    const idToken = headerToken.split(" ")[1];
+    admin.auth().verifyIdToken(idToken)
+        .then((decodedToken) => {
+            var uid = decodedToken.uid; // email
+
+            Actor.findOne({email: uid}, function(err, obj) { 
+                if(err) {
+                    return res.status(404).json({"error": "Actor not found"});
+                }
+                var loggedActor = obj;
+                req.managerID = loggedActor._id;
+                next()
+            })
+        })
+        .catch(() => res.status(401).end())
 };
+
+
+module.exports.CheckActor = (req, res, next) => {
+    const headerToken = req.headers.authorization;
+  
+    if(!isValidHeaderToken(headerToken)){
+        return res.status(401).json({ message: "No token provided or invalid one" });
+    }
+    
+    const idToken = headerToken.split(" ")[1];
+    admin.auth().verifyIdToken(idToken)
+        .then((decodedToken) => {
+            var uid = decodedToken.uid; // email
+
+            Actor.findOne({email: uid}, function(err, obj) { 
+                if(err) {
+                    return res.status(404).json({"error": "Actor not found"});
+                }
+                var loggedActor = obj;
+                req.actorID = loggedActor._id;
+                next()
+            })
+        })
+        .catch(() => res.status(401).end())
+};
+
+function isValidHeaderToken(headerToken) {
+    var res = true;
+    if(!headerToken) {
+        res = false;
+      }
+    
+    if(headerToken && headerToken.split(" ")[0] !== "Bearer") {
+        res = false;
+    }
+    return res;
+}
+
+module.exports.CheckIsAuthenticated = (req, res, next) => {
+  const headerToken = req.headers.authorization;
+
+  if(!isValidHeaderToken(headerToken)) {
+    return res.status(401).json({ message: "No token provided or invalid one" });
+  }
+
+  const idToken = headerToken.split(" ")[1];
+  admin
+    .auth()
+    .verifyIdToken(idToken)
+    .then(() => next())
+    .catch(() => res.status(403).json({ message: "Could not authorize" }));
+}
+

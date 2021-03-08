@@ -2,9 +2,13 @@ const express = require("express");
 const swagger = require("./swagger");
 const cors = require("cors");
 const DatabaseConnection = require("./DatabaseConnection");
+
+const paypal = require("paypal-rest-sdk");
+var admin = require("firebase-admin");
+
+const AuthController = require("./routes/AuthController");
 const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
-const paypal = require("paypal-rest-sdk");
 const ActorController = require("./routes/ActorController");
 const TripController = require("./routes/TripController");
 const DashboardController = require("./routes/DashboardController");
@@ -24,6 +28,7 @@ class App {
 
         // Route registration
         const apiPrefix = swagger.getBasePath();
+        AuthController.register(apiPrefix, this.router);
         SponsorshipController.register(apiPrefix, this.router);
         SystemParamsController.register(apiPrefix, this.router);
         ActorController.register(apiPrefix, this.router);
@@ -38,6 +43,14 @@ class App {
             client_id: process.env.PAYPAL_CLIENT_ID,
             client_secret: process.env.PAYPAL_CLIENT_SECRET
         });
+
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                "project_id": process.env.FIREBASE_PROJECT_ID,
+                "private_key": process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                "client_email": process.env.FIREBASE_CLIENT_EMAIL
+            })
+          });
     }
 
     static errorHandler(err, req, res, next) {
