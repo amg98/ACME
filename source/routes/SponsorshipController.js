@@ -47,6 +47,30 @@ const getSponsorship = async (req, res) => {
 };
 
 /**
+ * Get a random paid sponsorship for a trip
+ * @route GET /trips/{id}/random-sponsorship
+ * @group Trip - Trip
+ * @param {string} id.path.required     - Trip identifier
+ * @returns {Sponsorship.model}     200 - Returns the random paid sponsorship
+ * @returns {}                      404 - Sponsorship not found
+ * @returns {DatabaseError}         500 - Database error
+ */
+const getRandomSponsorship = async (req, res) => {
+    try {
+        const docs = await SponsorshipSchema.find({ tripID: req.params.id, isPaid: true })
+            .select("-sponsorID -paymentID -tripID -isPaid")
+            .exec();
+        if (docs.length > 0) {
+            return res.status(200).json(docs[(Math.random() * (docs.length + 1)) << 0]);
+        } else {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
+};
+
+/**
  * Create a new sponsorship for a specific sponsor
  * @route POST /sponsorships
  * @group Sponsorships - Trip advertising
@@ -215,6 +239,7 @@ const confirmPayment = async (req, res) => {
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/sponsorships`;
     router.get(`${apiURL}/:id?`, CheckSponsor, getSponsorship);
+    router.get(`${apiPrefix}/trips/:id/random-sponsorship`, Validators.TripExists("params", "id"), getRandomSponsorship);
     router.post(apiURL, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.TripExists("body", "sponsorship", "tripID"), createSponsorship);
     router.put(`${apiURL}/:id?`, CheckSponsor, Validators.Required("body", "sponsorship"), Validators.Required("params", "id"), Validators.TripExists("body", "sponsorship", "tripID"), updateSponsorship);
     router.delete(`${apiURL}/:id?`, CheckSponsor, Validators.Required("params", "id"), deleteSponsorship);
@@ -241,10 +266,10 @@ module.exports.register = (apiPrefix, router) => {
  * @property {boolean} isPaid                   - Is this sponsorship paid? (ignored in POST/PUT requests)
  */
 
- /**
- * @typedef SponsorshipPaymentPost
- * @property {SponsorshipPayment.model} paymentData - Sponsorship to add
- */
+/**
+* @typedef SponsorshipPaymentPost
+* @property {SponsorshipPayment.model} paymentData - Sponsorship to add
+*/
 
 /**
  * @typedef SponsorshipPayment
@@ -254,10 +279,10 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} lang                      - Language for descriptions. Available: eng/es
  */
 
- /**
- * @typedef SponsorshipPaymentConfirmPost
- * @property {SponsorshipPaymentConfirm.model} confirmData - Sponsorship to update
- */
+/**
+* @typedef SponsorshipPaymentConfirmPost
+* @property {SponsorshipPaymentConfirm.model} confirmData - Sponsorship to update
+*/
 
 /**
  * @typedef SponsorshipPaymentConfirm
