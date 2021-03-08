@@ -94,6 +94,7 @@ module.exports.CheckConfirmData = (objectName, fieldName) => async (req, res, ne
 
 module.exports.TripExists = (objectName, subobjectName, fieldName) => (req, res, next) => {
     // TODO
+    // fieldName puede ser undefined
     next();
 }
 

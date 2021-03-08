@@ -49,8 +49,7 @@ const getMyTrips = async (req, res) => {
  */
 const getTrip = async (req, res) => {
   try {
-    let docs;
-    docs = await Trip.findById(req.params.id).exec();
+    const docs = await Trip.findById(req.params.id).exec();
     return res.status(200).json(docs);
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
