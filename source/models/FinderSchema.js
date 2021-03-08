@@ -1,5 +1,3 @@
-import TripSchema from "Trip.js";
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const tripSchema = require("./TripSchema");
@@ -11,7 +9,8 @@ const FinderSchema = new Schema({
     dateInit: Schema.Types.Date,
     dateEnd: Schema.Types.Date,
     trips: {
-        type: [tripSchema],
+        //type: [tripSchema],
+        type: Schema.Types.Mixed,       // TODO Corregir
         expires: 3600
     }
 });
