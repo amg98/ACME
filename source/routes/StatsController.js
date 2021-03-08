@@ -113,6 +113,7 @@ const pricePerTrips = async (req, res) => {
  * @group Stats
  * @returns {ApplicationRatio.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
+ * @returns {} 404 - If there are no applications
  * @returns {DarabaseError} 500 - Database error
  */
 const applicationsRatio = async (req, res) => {
@@ -126,8 +127,10 @@ const applicationsRatio = async (req, res) => {
             }
         ]).exec();
 
+        if(docs.length === 0) return res.sendStatus(404);
+
         const total = docs.reduce((a, doc) => a + doc.count, 0);
-        const calcRatio = (status) => docs.reduce((a, doc) => a + (doc._id === status ? 1 : 0), 0) / total * 100;
+        const calcRatio = (status) => docs.find((doc) => doc._id === status).count / total * 100;
         
         res.status(200).json({
             pending: calcRatio("PENDING"),
@@ -180,7 +183,7 @@ const topTenKeywords = async (req, res) => {
                 }
             },
             {
-                $sort: { _id: -1 }
+                $sort: { _id: 1 }
             },
             { $limit: 10 }
         ]).exec();
