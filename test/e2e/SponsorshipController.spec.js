@@ -1,4 +1,4 @@
-const { resetDB, makeRequest } = require("../utils");
+const { resetDB, makeRequest, createUserAndLogin } = require("../utils");
 const mongoose = require("mongoose");
 const TripSchema = require("../../source/models/TripSchema");
 const SponsorshipSchema = require("../../source/models/SponsorshipSchema");
@@ -20,42 +20,77 @@ describe("Sponsorship API", () => {
     ];
 
     const testURL = "/api/v1/sponsorships";
+    let authHeader;
 
-    beforeEach(resetDB);
+    beforeEach(async () => {
+        await resetDB();
+        const userData = await createUserAndLogin("SPONSOR");
+        authHeader = userData.authHeader;
+    });
+
+    it("Unauthorized in GET", () => {
+        return makeRequest()
+            .get(testURL)
+            .expect(401);
+    });
+
+    it("Unauthorized in POST", () => {
+        return makeRequest()
+            .post(testURL)
+            .expect(401);
+    });
+
+    it("Unauthorized in PUT", () => {
+        return makeRequest()
+            .put(testURL)
+            .expect(401);
+    });
+
+    it("Unauthorized in DELETE", () => {
+        return makeRequest()
+            .delete(testURL)
+            .expect(401);
+    });
 
     it("Missing fields in POST", () => {
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .expect(400, { reason: "Missing fields" });
     });
 
     it("Missing fields in PUT", () => {
         return makeRequest()
             .put(testURL)
+            .set(authHeader)
             .expect(400, { reason: "Missing fields" });
     });
 
     it("Missing fields in DELETE", () => {
         return makeRequest()
             .delete(testURL)
+            .set(authHeader)
             .expect(400, { reason: "Missing fields" });
     });
 
     it("Get missing sponsorship", () => {
         return makeRequest()
             .get(`${testURL}/${mongoose.Types.ObjectId().toHexString()}`)
+            .set(authHeader)
             .expect(404);
     });
 
     it("Correct read only one", async () => {
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .get(`${testURL}/${response.body}`)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -69,12 +104,14 @@ describe("Sponsorship API", () => {
     it("Correct read all sponsorships", () => {
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .post(testURL)
+                    .set(authHeader)
                     .send({ sponsorship: sampleSponsorship[0] })
                     .expect(200)
             })
@@ -82,6 +119,7 @@ describe("Sponsorship API", () => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .get(testURL)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -98,6 +136,7 @@ describe("Sponsorship API", () => {
     it("Trying to POST with isPaid", () => {
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({
                 sponsorship: {
                     ...sampleSponsorship[0],
@@ -109,6 +148,7 @@ describe("Sponsorship API", () => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .get(`${testURL}/${response.body}`)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -123,6 +163,7 @@ describe("Sponsorship API", () => {
         let sponsorshipID;
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
@@ -130,12 +171,14 @@ describe("Sponsorship API", () => {
                 sponsorshipID = response.body;
                 return makeRequest()
                     .get(testURL)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
                 expect(response.body.length).to.equal(1);
                 return makeRequest()
                     .delete(`${testURL}/${sponsorshipID}`)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -145,6 +188,7 @@ describe("Sponsorship API", () => {
                 expect(response.body.isPaid).to.equal(false);
                 return makeRequest()
                     .get(testURL)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -156,12 +200,14 @@ describe("Sponsorship API", () => {
         const newBannerURL = "https://tuenti.com";
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
+                    .set(authHeader)
                     .send({
                         sponsorship: {
                             bannerURL: newBannerURL
@@ -173,6 +219,7 @@ describe("Sponsorship API", () => {
                 expect(response.body.bannerURL).to.equal(newBannerURL);
                 return makeRequest()
                     .get(testURL)
+                    .set(authHeader)
                     .expect(200);
             })
             .then(response => {
@@ -183,12 +230,14 @@ describe("Sponsorship API", () => {
     it("Trying to edit isPaid", () => {
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
+                    .set(authHeader)
                     .send({
                         sponsorship: {
                             isPaid: true
@@ -205,12 +254,14 @@ describe("Sponsorship API", () => {
         const newSponsorID = mongoose.Types.ObjectId().toHexString(123);
         return makeRequest()
             .post(testURL)
+            .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
             .then(response => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
+                    .set(authHeader)
                     .send({
                         sponsorship: {
                             sponsorID: newSponsorID

@@ -16,6 +16,9 @@ Environment variables:
 - PAYPAL_MODE: "sandbox" or "live". Use sandbox if you don't want to get charged
 - PAYPAL_CLIENT_ID: Client ID of a Paypal business account
 - PAYPAL_CLIENT_SECRET: Paypal business account REST API secret
+- FIREBASE_PROJECT_ID: Firebase auth project ID
+- FIREBASE_PRIVATE_KEY: Firebase private key
+- FIREBASE_CLIENT_EMAIL: Generated Firebase email
 
 ## API Documentation
 [Swagger docs](https://acmeexplorer.herokuapp.com/api-docs)
