@@ -18,6 +18,10 @@ module.exports.CheckAdmin = (req, res, next) => {
                     return res.status(404).json({"error": "Actor not found"});
                 }
                 var loggedActor = obj;
+
+                if(!loggedActor.roles.includes("ADMINISTRATOR")){
+                    return res.status(403).json({ message: "You have to be an Admin" });
+                }
                 req.adminID = loggedActor._id;
                 next()
             })
@@ -42,6 +46,10 @@ module.exports.CheckSponsor = (req, res, next) => {
                     return res.status(404).json({"error": "Actor not found"});
                 }
                 var loggedActor = obj;
+
+                if(!loggedActor.roles.includes("SPONSOR")){
+                    return res.status(403).json({ message: "You have to be a Sponsor" });
+                }
                 req.sponsorID = loggedActor._id;
                 next()
             })
@@ -66,6 +74,9 @@ module.exports.CheckExplorer = (req, res, next) => {
                     return res.status(404).json({"error": "Actor not found"});
                 }
                 var loggedActor = obj;
+                if(!loggedActor.roles.includes("EXPLORER")){
+                    return res.status(403).json({ message: "You have to be an Explorer" });
+                }
                 req.explorerID = loggedActor._id;
                 next()
             })
@@ -90,6 +101,9 @@ module.exports.CheckManager = (req, res, next) => {
                     return res.status(404).json({"error": "Actor not found"});
                 }
                 var loggedActor = obj;
+                if(!loggedActor.roles.includes("MANAGER")){
+                    return res.status(403).json({ message: "You have to be a Manager" });
+                }
                 req.managerID = loggedActor._id;
                 next()
             })
