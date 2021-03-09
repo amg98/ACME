@@ -1,4 +1,4 @@
-const { resetDB, makeRequest } = require("../utils");
+const { resetDB, makeRequest, createUserAndLogin } = require("../utils");
 const mongoose = require("mongoose");
 const { expect } = require("chai");
 const TripSchema = require("../../source/models/TripSchema");
@@ -8,6 +8,7 @@ const FinderSchema = require("../../source/models/FinderSchema");
 describe("Stats API", () => {
 
     const testURL = "/api/v1/stats";
+    let authHeader;
 
     const IDs = [
         mongoose.Types.ObjectId().toHexString(),
@@ -15,41 +16,87 @@ describe("Stats API", () => {
         mongoose.Types.ObjectId().toHexString()
     ];
 
-    beforeEach(resetDB);
+    beforeEach(async () => {
+        await resetDB();
+        const userData = await createUserAndLogin("ADMINISTRATOR");
+        authHeader = userData.authHeader;
+    });
+
+    it("Trips per manager unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/trips-per-manager`)
+            .expect(401);
+    });
 
     it("Trips per manager not found", () => {
         return makeRequest()
             .get(`${testURL}/trips-per-manager`)
+            .set(authHeader)
             .expect(404);
+    });
+
+    it("Applications per trip unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/applications-per-trip`)
+            .expect(401);
     });
 
     it("Applications per trip not found", () => {
         return makeRequest()
             .get(`${testURL}/applications-per-trip`)
+            .set(authHeader)
             .expect(404);
+    });
+
+    it("Average price per trip unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/price-per-trips`)
+            .expect(401);
     });
 
     it("Average price per trip not found", () => {
         return makeRequest()
             .get(`${testURL}/price-per-trips`)
+            .set(authHeader)
             .expect(404);
+    });
+
+    it("Applications ratio unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/applications-ratio`)
+            .expect(401);
     });
 
     it("Applications ratio not found", () => {
         return makeRequest()
             .get(`${testURL}/applications-ratio`)
+            .set(authHeader)
             .expect(404);
+    });
+
+    it("Average price in finders unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/avg-price-finder`)
+            .expect(401);
     });
 
     it("Average price in finders not found", () => {
         return makeRequest()
             .get(`${testURL}/avg-price-finder`)
+            .set(authHeader)
             .expect(404);
+    });
+
+    it("Top 10 keywords in finders unauthorized", () => {
+        return makeRequest()
+            .get(`${testURL}/top-keywords`)
+            .expect(401);
     });
 
     it("Top 10 keywords in finders not found", () => {
         return makeRequest()
             .get(`${testURL}/top-keywords`)
+            .set(authHeader)
             .expect(200, []);
     });
 
@@ -72,6 +119,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/trips-per-manager`)
+            .set(authHeader)
             .expect(200, {
                 min: 1,
                 max: 5,
@@ -96,6 +144,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/applications-per-trip`)
+            .set(authHeader)
             .expect(200, {
                 min: 1,
                 max: 5,
@@ -118,6 +167,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/price-per-trips`)
+            .set(authHeader)
             .expect(200, {
                 min: 10,
                 max: 90,
@@ -140,6 +190,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/applications-ratio`)
+            .set(authHeader)
             .expect(200, {
                 accepted: 2 / apps.length * 100,
                 cancelled: 1 / apps.length * 100,
@@ -162,6 +213,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/avg-price-finder`)
+            .set(authHeader)
             .expect(200, {
                 maxPrice: 72.77777777777777,
                 minPrice: 25
@@ -197,6 +249,7 @@ describe("Stats API", () => {
 
         return makeRequest()
             .get(`${testURL}/top-keywords`)
+            .set(authHeader)
             .expect(200, [
                 { keyword: 'a', count: 100 },
                 { keyword: 'b', count: 90 },
