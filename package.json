@@ -22,6 +22,7 @@
         "nodemon": "^2.0.7",
         "paypal-rest-sdk": "^1.8.1",
         "randexp": "^0.5.3",
+        "request": "^2.88.2",
         "request-promise": "^4.2.6"
     },
     "devDependencies": {
