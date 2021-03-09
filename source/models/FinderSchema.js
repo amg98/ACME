@@ -13,7 +13,8 @@ const FinderSchema = new Schema({
     trips: {
         type: [tripSchema],
         expires: 3600
-    }
+    },
+    actorID: Schema.Types.ObjectId
 });
 
 module.exports = mongoose.model("Finder", FinderSchema);

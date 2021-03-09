@@ -2,9 +2,9 @@ const Application = require("../models/ApplicationSchema");
 
 /**
  * Get a specific application for a explorer
- * @route GET /applications/{applicationId}
+ * @route GET /applications/{applicationID}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required        - Application identifier
+ * @param {string} applicationID.path.required        - Application identifier
  * @returns {Array.<Application>}   200 - Returns the requested application
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
@@ -13,7 +13,7 @@ const getOne = (req, res) => {
   // Necesita explorerID autenticado
   console.log(Date() + "-GET /applications");
 
-  Application.findById(req.params.applicationId, function (err, application) {
+  Application.findById(req.params.applicationID, function (err, application) {
     if (err) {
       res.send(err);
     }
@@ -49,16 +49,16 @@ const getAllByTripId = (req, res) => {
 
 /**
  * Find applications by explorer and status
- * @route GET /applications/explorers/{explorerId}
+ * @route GET /applications/explorers/{explorerID}
  * @group Applications - Application to a trip
- * @param {string} explorerId.path.required - Explorer identifier
+ * @param {string} explorerID.path.required - Explorer identifier
  * @param {string} status.query             - Status
  * @returns {Array.<Application>}       200 - Returns the requested application
  * @returns {}                          401 - User is not authorized to perform this operation
  * @returns {DatabaseError}             500 - Database error
  */
 const getAllByExplorerId = (req, res) => {
-  console.log(Date() + "-GET /applications/explorers/explorerId");
+  console.log(Date() + "-GET /applications/explorers/explorerID");
   let status = "PENDING"
   const possibleStatus = ['PENDING', 'REJECTED', 'DUE', 'ACCEPTED', 'CANCELLED']
   if (possibleStatus.includes(req.query.status)) {
@@ -67,7 +67,7 @@ const getAllByExplorerId = (req, res) => {
     res.status(400).json("Not valid status submitted")
   }
 
-  Application.find({ explorerId: req.params.explorerId, status: status })
+  Application.find({ explorerID: req.params.explorerID, status: status })
     .lean()
     .exec(function (err, applications) {
       if (err) {
@@ -102,7 +102,7 @@ const createOne = async (req, res) => {
 
 /**
  * Explorer cancel an application
- * @route PUT /applications/explorers/{applicationId}
+ * @route PUT /applications/explorers/{applicationID}
  * @group Applications - Application to a trip
  * @param {ApplicationPutExplorer.model} application.body.required  - Application updates
  * @returns {Application}           200 - Returns the current state for this application
@@ -113,13 +113,13 @@ const createOne = async (req, res) => {
 const explorerCancel = (req, res) => {
   console.log(Date() + "-PUT /applications - Explorer CANCEL");
   // Puede recibir explorerId autenticado, para pasarla de ACCEPTED/PENDING a CANCELLED
-  Application.findById(req.body.applicationId, async function (err, application) {
+  Application.findById(req.body.applicationID, async function (err, application) {
     if (err) {
       res.send(err);
     }
     else {
       if (application.status === "PENDING" || application.status === "ACCEPTED") {
-        let doc = await Application.findOneAndUpdate(req.body.applicationId, { status: "CANCELLED" }, function (err, applicationUpdated) {
+        let doc = await Application.findOneAndUpdate(req.body.applicationID, { status: "CANCELLED" }, function (err, applicationUpdated) {
           if (err) {
             res.send(err);
           }
@@ -134,9 +134,9 @@ const explorerCancel = (req, res) => {
 
 /**
  * Update an existing application for a specific actor
- * @route PUT /applications/{applicationId}
+ * @route PUT /applications/{applicationID}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required           - Application identifier
+ * @param {string} applicationID.path.required           - Application identifier
  * @param {Application.model} application.body.required  - Finder updates
  * @returns {Application}           200 - Returns the current state for this application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
@@ -146,7 +146,7 @@ const explorerCancel = (req, res) => {
 const editOne = (req, res) => {
   // Necesita managerId autenticado, _id
   console.log(Date() + "-PUT /applications");
-  Application.findOneAndUpdate({ _id: req.params.applicationId }, req.body)
+  Application.findOneAndUpdate({ _id: req.params.applicationID }, req.body)
     .then(doc => {
       if (doc) {
         return Application.findById(doc._id);
@@ -160,9 +160,9 @@ const editOne = (req, res) => {
 
 /**
  * Manager update an application
- * @route PUT /applications/managers/{applicationId}
+ * @route PUT /applications/managers/{applicationID}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required                     - Application identifier
+ * @param {string} applicationID.path.required                     - Application identifier
  * @param {ApplicationPutManager.model} application.body.required  - Application updates
  * @returns {Application}           200 - Returns the current state for this application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
@@ -184,13 +184,13 @@ const managerUpdate = (req, res) => {
       throw "STATUS"
     }
 
-    Application.findById(req.params.applicationId, async function (err, application) {
+    Application.findById(req.params.applicationID, async function (err, application) {
       if (err) {
         res.send(err);
       }
       else {
         if (application.status === "PENDING") {
-          let doc = await Application.findOneAndUpdate({ _id: req.params.applicationId }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
+          let doc = await Application.findOneAndUpdate({ _id: req.params.applicationID }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
             if (err) {
               res.send(err);
             }
@@ -214,9 +214,9 @@ const managerUpdate = (req, res) => {
 
 /**
  * Delete an existing application for a specific explorer
- * @route DELETE /applications/{applicationId}
+ * @route DELETE /applications/{applicationID}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required        - Application identifier
+ * @param {string} applicationID.path.required        - Application identifier
  * @returns {Application}           200 - Returns the deleted application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -225,7 +225,7 @@ const managerUpdate = (req, res) => {
 const deleteOne = async(req, res) => {
   // Necesita explorerID autenticado, _id
   try {
-    const doc = await Application.findOneAndDelete({ _id: req.params.applicationId });
+    const doc = await Application.findOneAndDelete({ _id: req.params.applicationID });
     if (doc) {
       return res.status(200).json(doc);
     } else {
@@ -238,14 +238,14 @@ const deleteOne = async(req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
-  router.get(apiURL + '/:applicationId', getOne);
+  router.get(apiURL + '/:applicationID', getOne);
   router.get(apiURL + '/trips/:tripId', getAllByTripId);
-  router.get(apiURL + '/explorers/:explorerId', getAllByExplorerId);
+  router.get(apiURL + '/explorers/:explorerID', getAllByExplorerId);
   router.post(apiURL, createOne);
   router.put(apiURL, editOne);
-  router.put(apiURL + '/explorers/:applicationId', explorerCancel);
-  router.put(apiURL + '/managers/:applicationId', managerUpdate);
-  router.delete(apiURL + '/:applicationId', deleteOne)
+  router.put(apiURL + '/explorers/:applicationID', explorerCancel);
+  router.put(apiURL + '/managers/:applicationID', managerUpdate);
+  router.delete(apiURL + '/:applicationID', deleteOne)
 };
 
 /**
@@ -260,7 +260,7 @@ module.exports.register = (apiPrefix, router) => {
 
 /**
  * @typedef ApplicationPutExplorer
- * @property {string} applicationId.required  - ApplicationId
+ * @property {string} applicationID.required  - applicationID
  */
 
 /**

@@ -29,6 +29,7 @@ class App {
         SystemParamsController.register(apiPrefix, this.router);
         ActorController.register(apiPrefix, this.router);
         TripController.register(apiPrefix, this.router);
+        ApplicationController.register(apiPrefix, this.router);
         DashboardController.register(apiPrefix, this.router);
 
         this.app.use(App.errorHandler);
