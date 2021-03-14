@@ -1,8 +1,7 @@
-import TripSchema from "Trip.js";
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const tripSchema = require("./TripSchema");
+const systemParamsController = require("../routes/SystemParamsController");
 
 const FinderSchema = new Schema({
     keyword: Schema.Types.String,
@@ -12,7 +11,7 @@ const FinderSchema = new Schema({
     dateEnd: Schema.Types.Date,
     trips: {
         type: [tripSchema],
-        expires: 3600
+        expires: systemParamsController.getFinderResultsTTL()
     },
     actorID: Schema.Types.ObjectId
 });
