@@ -1,23 +1,27 @@
-const { resetDB, makeRequest } = require("../utils");
+const { resetDB, makeRequest, createUserAndLogin } = require("../utils");
 const mongoose = require("mongoose");
 const { expect } = require("chai");
 const SponsorshipSchema = require("../../source/models/SponsorshipSchema");
 
 describe("Sponsorship payments API", () => {
 
-    const testSponsorship = {
+    let testSponsorship = {
         bannerURL: "https://google.es",
         landingPageURL: "https://google.es",
-        sponsorID: "6043832192d9363acca82510",  // TODO Change when auth is ready
+        sponsorID: 0,
         tripID: mongoose.Types.ObjectId().toHexString()
     };
 
     let testSponsorshipID;
+    let authHeader;
 
     const testURL = "/api/v1/sponsorships";
 
     beforeEach(async () => {
         await resetDB();
+        const userData = await createUserAndLogin("SPONSOR");
+        authHeader = userData.authHeader;
+        testSponsorship.sponsorID = userData.userID;
         return new SponsorshipSchema(testSponsorship)
             .save()
             .then((doc) => {
@@ -25,13 +29,21 @@ describe("Sponsorship payments API", () => {
             });
     });
 
+    it("Unauthorized in /payment", () => {
+        return makeRequest()
+            .post(`${testURL}/payment`)
+            .expect(401);
+    });
+
     it("Missing fields in /payment", () => {
         return makeRequest()
             .post(`${testURL}/payment`)
+            .set(authHeader)
             .expect(400, { reason: "Missing fields" })
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment`)
+                    .set(authHeader)
                     .send({
                         paymentData: {}
                     })
@@ -40,6 +52,7 @@ describe("Sponsorship payments API", () => {
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment`)
+                    .set(authHeader)
                     .send({
                         paymentData: {
                             id: testSponsorshipID,
@@ -51,6 +64,7 @@ describe("Sponsorship payments API", () => {
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment`)
+                    .set(authHeader)
                     .send({
                         paymentData: {
                             id: testSponsorshipID,
@@ -63,6 +77,7 @@ describe("Sponsorship payments API", () => {
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment`)
+                    .set(authHeader)
                     .send({
                         paymentData: {
                             id: testSponsorshipID,
@@ -78,6 +93,7 @@ describe("Sponsorship payments API", () => {
     it("Wrong sponsorshipID in /payment", () => {
         return makeRequest()
             .post(`${testURL}/payment`)
+            .set(authHeader)
             .send({
                 paymentData: {
                     id: mongoose.Types.ObjectId().toHexString(),
@@ -92,6 +108,7 @@ describe("Sponsorship payments API", () => {
     it("Correct payment creation", () => {
         return makeRequest()
             .post(`${testURL}/payment`)
+            .set(authHeader)
             .send({
                 paymentData: {
                     id: testSponsorshipID,
@@ -103,13 +120,21 @@ describe("Sponsorship payments API", () => {
             .expect(200);
     }).timeout(10000);
 
+    it("Unauthorized in /payment-confirm", () => {
+        return makeRequest()
+            .post(`${testURL}/payment-confirm`)
+            .expect(401);
+    });
+
     it("Missing fields in /payment-confirm", () => {
         return makeRequest()
             .post(`${testURL}/payment-confirm`)
+            .set(authHeader)
             .expect(400, { reason: "Missing fields" })
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment-confirm`)
+                    .set(authHeader)
                     .send({
                         confirmData: {
                             id: testSponsorshipID
@@ -120,6 +145,7 @@ describe("Sponsorship payments API", () => {
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment-confirm`)
+                    .set(authHeader)
                     .send({
                         confirmData: {
                             id: testSponsorshipID,
@@ -131,6 +157,7 @@ describe("Sponsorship payments API", () => {
             .then(() => {
                 return makeRequest()
                     .post(`${testURL}/payment-confirm`)
+                    .set(authHeader)
                     .send({
                         confirmData: {
                             id: testSponsorshipID,
@@ -144,6 +171,7 @@ describe("Sponsorship payments API", () => {
     it("Wrong sponsorshipID in /payment-confirm", () => {
         return makeRequest()
             .post(`${testURL}/payment-confirm`)
+            .set(authHeader)
             .send({
                 confirmData: {
                     id: mongoose.Types.ObjectId().toHexString(),
@@ -157,6 +185,7 @@ describe("Sponsorship payments API", () => {
     it("Wrong payment confirmation", () => {
         return makeRequest()
             .post(`${testURL}/payment-confirm`)
+            .set(authHeader)
             .send({
                 confirmData: {
                     id: testSponsorshipID,
