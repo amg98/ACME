@@ -49,8 +49,15 @@ const getMyTrips = async (req, res) => {
  */
 const getTrip = async (req, res) => {
   try {
-    const docs = await Trip.findById(req.params.id).exec();
-    return res.status(200).json(docs);
+    const doc = await Trip.findOne({
+      _id: req.params.id,
+      isPublished: true,
+    }).exec();
+    if (doc) {
+      return res.status(200).json(doc);
+    } else {
+      return res.sendStatus(404);
+    }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
   }
@@ -60,13 +67,13 @@ const getTrip = async (req, res) => {
  * Search trips by title, desc or ticker
  * @route GET /trips/search/{keyword}
  * @group Trip - Trip
- * @param {string} keyword.query - Keyword contained wether in ticker, title or desc.
+ * @param {string} keyword.path.required - Keyword contained wether in ticker, title or desc.
  * @returns {Array.<Trip>}   200 - Returns Trips matching parameters
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
  */
 const searchTrips = async (req, res) => {
-  let re = new RegExp(`.*${req.query.keyword}.*`, "i");
+  let re = new RegExp(`.*${req.params.keyword}.*`, "i");
 
   try {
     let docs;
@@ -260,9 +267,17 @@ function generateTicker() {
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/trips`;
   router.get(apiURL, getTrips);
-  router.get(`${apiURL}/search/:keyword?`, searchTrips);
+  router.get(
+    `${apiURL}/search/:keyword?`,
+    Validators.Required("params", "keyword"),
+    searchTrips
+  );
   router.get(`${apiURL}/logged`, CheckManager, getMyTrips);
-  router.get(`${apiURL}/display`, getTrip);
+  router.get(
+    `${apiURL}/display/:id?`,
+    Validators.Required("params", "id"),
+    getTrip
+  );
   router.post(
     apiURL,
     CheckManager,
@@ -273,6 +288,7 @@ module.exports.register = (apiPrefix, router) => {
   router.put(
     apiURL,
     CheckManager,
+    Validators.Required("params", "id"),
     Validators.Required("body", "trip"),
     Validators.CheckDates("body", "trip"),
     Validators.CheckNotPublished(),
@@ -281,19 +297,26 @@ module.exports.register = (apiPrefix, router) => {
   router.delete(
     `${apiURL}/:id?`,
     CheckManager,
+    Validators.Required("params", "id"),
     Validators.CheckNotPublished(),
     deleteTrip
   );
   router.put(
     `${apiURL}/cancel/:id?`,
     CheckManager,
+    Validators.Required("params", "id"),
     Validators.CheckNotPublished(),
     Validators.Required("body", "cancellReason"),
     Validators.CheckNotStarted(),
     Validators.CheckNoApplicationsAttached(),
     cancelTrip
   );
-  router.put(`${apiURL}/publish/:id?`, CheckManager, publishTrip);
+  router.put(
+    `${apiURL}/publish/:id?`,
+    CheckManager,
+    Validators.Required("params", "id"),
+    publishTrip
+  );
 };
 
 /**
