@@ -155,25 +155,13 @@ module.exports.CheckNotPublished = () => (req, res, next) => {
   });
 };
 
-module.exports.CheckNotStarted = () => (req, res, next) => {
-  Trip.findOne({ _id: req.params.id }, function (err, trip) {
-    if (Date(trip.startDate) < Date.now()) {
-      res.status(400).json({ reason: "The trip has already started" });
-    } else {
-      next();
-    }
-  });
-};
-
 module.exports.CheckNoApplicationsAttached = () => (req, res, next) => {
   //TODO
   Application.find(
-    { tripID: req.params.id, status: "ACCEPTED" },
+    { tripId: req.params.id, status: "ACCEPTED" },
     function (err, docs) {
       if (docs.length > 0) {
-        res
-          .status(400)
-          .json({ reason: "This trip has applications associated" });
+        res.status(400).json({ reason: "Trip has applications associated" });
       } else {
         next();
       }

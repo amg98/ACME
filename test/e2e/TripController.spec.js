@@ -4,7 +4,7 @@ const TripSchema = require("../../source/models/TripSchema");
 const ApplicationSchema = require("../../source/models/ApplicationSchema");
 const { expect } = require("chai");
 
-describe("Trip API", () => {
+describe.only("Trip API", () => {
   const sampleTrips = [
     {
       title: "Best trip money can buy",
@@ -141,55 +141,73 @@ describe("Trip API", () => {
       .expect(400, { reason: "Missing fields" });
   });
 
-  it("Show non-existent trip", () => {
+  it("PUBLISH trip", async () => {
     return makeRequest()
-      .get(`${testURL}/display/${mongoose.Types.ObjectId().toHexString()}`)
+      .post(testURL)
       .set(authHeader)
-      .expect(404);
-  });
-
-  it("Show public trip", async () => {
-    await createPublished(sampleTrips[0]);
-
-    return makeRequest()
-      .get(`${testURL}/display/${publishedID}`)
-      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
       .expect(200)
       .then((response) => {
-        expect(response.body.title).to.equal(sampleTrips[0].title);
-        expect(response.body.description).to.equal(sampleTrips[0].description);
-        expect(response.body.requirements[0]).to.equal(
-          sampleTrips[0].requirements[0]
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
         );
+        return makeRequest()
+          .put(`${testURL}/publish/${response.body._id}`)
+          .set(authHeader)
+          .expect(200);
       });
   });
 
-  it("Search trips using empty keyword", async () => {
-    await createPublished(sampleTrips[0]);
-    await createPublished(sampleTrips[1]);
-
+  it("DELETE trip", async () => {
     return makeRequest()
-      .get(`${testURL}/search`)
+      .post(testURL)
       .set(authHeader)
-      .expect(400, { reason: "Missing fields" });
-  });
-
-  it("Search trips using a keyword", async () => {
-    await createPublished(sampleTrips[0]);
-    await createPublished(sampleTrips[1]);
-    //Only the second trip contains the word 'second' in its desciption both in title
-    const keyword = "second";
-
-    return makeRequest()
-      .get(`${testURL}/search/${keyword}`)
-      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
       .expect(200)
       .then((response) => {
-        expect(response.body.length).to.equal(1);
-        expect(response.body[0].description).to.equal(
-          sampleTrips[1].description
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
         );
-        expect(response.body[0].title).to.equal(sampleTrips[1].title);
+        return makeRequest()
+          .delete(`${testURL}/${response.body._id}`)
+          .set(authHeader)
+          .expect(200)
+          .then((response) => {
+            return makeRequest()
+              .get(`${testURL}/display/manager/${response.body._id}`)
+              .set(authHeader)
+              .expect(404);
+          });
+      });
+  });
+
+  it("CANCEL trip", async () => {
+    const cancelReason = "because I want";
+
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .put(`${testURL}/publish/${response.body._id}`)
+          .set(authHeader)
+          .expect(200)
+          .then((response) => {
+            return makeRequest()
+              .put(`${testURL}/cancel/${response.body._id}`)
+              .send({ cancelReason: cancelReason })
+              .set(authHeader)
+              .expect(200)
+              .then((response) => {
+                expect(response.body.isCancelled).is.equal(true);
+                expect(response.body.cancelReason).is.equal(cancelReason);
+              });
+          });
       });
   });
 
@@ -209,47 +227,23 @@ describe("Trip API", () => {
       });
   });
 
-  it("Show non-published trip as manager being owner", async () => {
+  it("GET public trip", async () => {
+    await createPublished(sampleTrips[0]);
+
     return makeRequest()
-      .post(testURL)
+      .get(`${testURL}/display/${publishedID}`)
       .set(authHeader)
-      .send({ trip: sampleTrips[0] })
       .expect(200)
       .then((response) => {
-        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-          true
+        expect(response.body.title).to.equal(sampleTrips[0].title);
+        expect(response.body.description).to.equal(sampleTrips[0].description);
+        expect(response.body.requirements[0]).to.equal(
+          sampleTrips[0].requirements[0]
         );
-        return makeRequest()
-          .get(`${testURL}/display/manager/${response.body._id}`)
-          .set(authHeader)
-          .expect(200)
-          .then((response) => {
-            expect(response.body.title).to.equal(sampleTrips[0].title);
-          });
       });
   });
 
-  it("Unauthorized show non-public trip as manager", async () => {
-    const userDataAux = await createUserAndLogin("MANAGER", "aux@gmail.com");
-    authHeaderAux = userDataAux.authHeader;
-
-    return makeRequest()
-      .post(testURL)
-      .set(authHeader)
-      .send({ trip: sampleTrips[0] })
-      .expect(200)
-      .then((response) => {
-        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-          true
-        );
-        return makeRequest()
-          .get(`${testURL}/display/manager/${response.body._id}`)
-          .set(authHeaderAux)
-          .expect(404);
-      });
-  });
-
-  it("Get my trips as manager", async () => {
+  it("GET my trips as manager", async () => {
     return makeRequest()
       .post(testURL)
       .set(authHeader)
@@ -281,7 +275,83 @@ describe("Trip API", () => {
       });
   });
 
-  it("Create trip endDate before startDate", async () => {
+  it("SEARCH trips using a keyword", async () => {
+    await createPublished(sampleTrips[0]);
+    await createPublished(sampleTrips[1]);
+    //Only the second trip contains the word 'second' in its desciption both in title
+    const keyword = "second";
+
+    return makeRequest()
+      .get(`${testURL}/search/${keyword}`)
+      .set(authHeader)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.length).to.equal(1);
+        expect(response.body[0].description).to.equal(
+          sampleTrips[1].description
+        );
+        expect(response.body[0].title).to.equal(sampleTrips[1].title);
+      });
+  });
+
+  it("GET my trip as manager", async () => {
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .get(`${testURL}/display/manager/${response.body._id}`)
+          .set(authHeader)
+          .expect(200)
+          .then((response) => {
+            expect(response.body.title).to.equal(sampleTrips[0].title);
+          });
+      });
+  });
+
+  it("Trying to GET non-existent trip", () => {
+    return makeRequest()
+      .get(`${testURL}/display/${mongoose.Types.ObjectId().toHexString()}`)
+      .set(authHeader)
+      .expect(404);
+  });
+
+  it("Trying to SEARCH trips using empty keyword", async () => {
+    await createPublished(sampleTrips[0]);
+    await createPublished(sampleTrips[1]);
+
+    return makeRequest()
+      .get(`${testURL}/search`)
+      .set(authHeader)
+      .expect(400, { reason: "Missing fields" });
+  });
+
+  it("Trying to GET unauthorized non-public trip as manager", async () => {
+    const userDataAux = await createUserAndLogin("MANAGER", "aux@gmail.com");
+    authHeaderAux = userDataAux.authHeader;
+
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .get(`${testURL}/display/manager/${response.body._id}`)
+          .set(authHeaderAux)
+          .expect(404);
+      });
+  });
+
+  it("Trying to POST trip endDate before startDate", async () => {
     let trip = { ...sampleTrips[0] };
     trip.startDate = "2060-04-23T18:25:43.511Z";
     trip.endDate = "2059-04-23T18:25:43.511Z";
@@ -293,7 +363,7 @@ describe("Trip API", () => {
       .expect(400, { reason: "Date chosen wrongly" });
   });
 
-  it("Trying to post inconsistent trip", async () => {
+  it("Trying to POST inconsistent trip", async () => {
     var tripPost = { ...sampleTrips[0] };
 
     const isPusblised = true;
@@ -323,7 +393,7 @@ describe("Trip API", () => {
       });
   });
 
-  it("Trying to put inconsistent trip", async () => {
+  it("Trying to PUT inconsistent trip", async () => {
     let trip = { ...sampleTrips[0] };
 
     const isPusblised = true;
@@ -362,30 +432,7 @@ describe("Trip API", () => {
       });
   });
 
-  it("DELETE trip", async () => {
-    return makeRequest()
-      .post(testURL)
-      .set(authHeader)
-      .send({ trip: sampleTrips[0] })
-      .expect(200)
-      .then((response) => {
-        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-          true
-        );
-        return makeRequest()
-          .delete(`${testURL}/${response.body._id}`)
-          .set(authHeader)
-          .expect(200)
-          .then((response) => {
-            return makeRequest()
-              .get(`${testURL}/display/manager/${response.body._id}`)
-              .set(authHeader)
-              .expect(404);
-          });
-      });
-  });
-
-  it("Trying to delete published trip", async () => {
+  it("Trying to DELETE published trip", async () => {
     return makeRequest()
       .post(testURL)
       .set(authHeader)
@@ -408,24 +455,7 @@ describe("Trip API", () => {
       });
   });
 
-  it("PUBLISH trip", async () => {
-    return makeRequest()
-      .post(testURL)
-      .set(authHeader)
-      .send({ trip: sampleTrips[0] })
-      .expect(200)
-      .then((response) => {
-        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-          true
-        );
-        return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
-          .set(authHeader)
-          .expect(200);
-      });
-  });
-
-  it("Trying to publish when startDate has expired", async () => {
+  it("Trying to PUBLISH when startDate has expired", async () => {
     let testTrip = { ...sampleTrips[0] };
     testTrip.ticker = "000000-TEST";
     testTrip.managerID = mongoose.Types.ObjectId().toHexString();
@@ -437,40 +467,10 @@ describe("Trip API", () => {
     return makeRequest()
       .put(`${testURL}/publish/${doc._id}`)
       .set(authHeader)
-      .expect(401);
+      .expect(400);
   });
 
-  it("CANCEL trip", async () => {
-    const cancelReason = "because I want";
-
-    return makeRequest()
-      .post(testURL)
-      .set(authHeader)
-      .send({ trip: sampleTrips[0] })
-      .expect(200)
-      .then((response) => {
-        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-          true
-        );
-        return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
-          .set(authHeader)
-          .expect(200)
-          .then((response) => {
-            return makeRequest()
-              .put(`${testURL}/cancel/${response.body._id}`)
-              .send({ cancelReason: cancelReason })
-              .set(authHeader)
-              .expect(200)
-              .then((response) => {
-                expect(response.body.isCancelled).is.equal(true);
-                expect(response.body.cancelReason).is.equal(cancelReason);
-              });
-          });
-      });
-  });
-
-  it("Trying to cancel without reason why", async () => {
+  it("Trying to CANCEL without reason why", async () => {
     return makeRequest()
       .post(testURL)
       .set(authHeader)
@@ -494,21 +494,43 @@ describe("Trip API", () => {
       });
   });
 
-  // it.only("Trying to cancel when trip has already started", async () => {
-  //   let testTrip = { ...sampleTrips[0] };
-  //   testTrip.ticker = "000000-TEST";
-  //   testTrip.managerID = userID;
-  //   testTrip.isPublished = true;
-  //   testTrip.startDate = "2000-04-23T18:25:43.511Z";
+  it("Trying to CANCEL when trip has already started", async () => {
+    let testTrip = { ...sampleTrips[0] };
+    testTrip.ticker = "000000-TEST";
+    testTrip.managerID = userID;
+    testTrip.isPublished = true;
+    testTrip.startDate = "2000-04-23T18:25:43.511Z";
 
-  //   const doc = await new TripSchema(testTrip).save();
+    const doc = await new TripSchema(testTrip).save();
 
-  //   console.log(doc);
+    return makeRequest()
+      .put(`${testURL}/cancel/${doc._id}`)
+      .send({ cancelReason: "no reason" })
+      .set(authHeader)
+      .expect(400, { reason: "Trip can't be cancelled" });
+  });
 
-  //   return makeRequest()
-  //     .put(`${testURL}/cancel/${doc._id}`)
-  //     .send({ cancelReason: "no reason" })
-  //     .set(authHeader)
-  //     .expect(400, { reason: "The trip has already started" });
-  // });
+  it("Trying to CANCEL with applications associated", async () => {
+    let testTrip = { ...sampleTrips[0] };
+    testTrip.ticker = "000000-TEST";
+    testTrip.managerID = userID;
+    testTrip.isPublished = true;
+
+    const trip = await new TripSchema(testTrip).save();
+
+    let testApplication = {
+      status: "ACCEPTED",
+      tripId: trip._id,
+      comments: ["did", "nothing", "wrong"],
+      explorerId: mongoose.Types.ObjectId().toHexString(),
+    };
+
+    const app = await new ApplicationSchema(testApplication).save();
+
+    return makeRequest()
+      .put(`${testURL}/cancel/${trip._id}`)
+      .send({ cancelReason: "no reason" })
+      .set(authHeader)
+      .expect(400, { reason: "Trip has applications associated" });
+  });
 });

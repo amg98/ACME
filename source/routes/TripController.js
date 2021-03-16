@@ -173,7 +173,7 @@ const updateTrip = async (req, res) => {
       doc = await Trip.findById(doc._id);
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({ reason: "Trip can't be updated" });
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -200,7 +200,7 @@ const deleteTrip = async (req, res) => {
     if (doc) {
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({ reason: "Trip can't be deleted" });
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -233,7 +233,7 @@ const cancelTrip = async (req, res) => {
       doc = await Trip.findById(req.params.id);
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({ reason: "Trip can't be cancelled" });
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -264,7 +264,7 @@ const publishTrip = async (req, res) => {
       doc = await Trip.findById(req.params.id);
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({ reason: "Trip can't be published" });
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -340,7 +340,6 @@ module.exports.register = (apiPrefix, router) => {
     CheckManager,
     Validators.Required("params", "id"),
     Validators.Required("body", "cancelReason"),
-    Validators.CheckNotStarted(),
     Validators.CheckNoApplicationsAttached(),
     cancelTrip
   );
