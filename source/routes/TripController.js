@@ -22,7 +22,7 @@ const getTrips = async (req, res) => {
 
 /**
  * Get list of looged manager trips
- * @route GET /trips/logged
+ * @route GET /trips/manager
  * @group Trip - Trip
  * @returns {Array.<Trip>}   200 - Returns published Trips
  * @returns {} 401 - User is not authorized to perform this operation
@@ -300,7 +300,7 @@ module.exports.register = (apiPrefix, router) => {
     Validators.Required("params", "keyword"),
     searchTrips
   );
-  router.get(`${apiURL}/logged`, CheckManager, getMyTrips);
+  router.get(`${apiURL}/manager`, CheckManager, getMyTrips);
   router.get(
     `${apiURL}/display/:id?`,
     Validators.Required("params", "id"),

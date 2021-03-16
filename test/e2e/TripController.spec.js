@@ -4,7 +4,7 @@ const TripSchema = require("../../source/models/TripSchema");
 const ApplicationSchema = require("../../source/models/ApplicationSchema");
 const { expect } = require("chai");
 
-describe.only("Trip API", () => {
+describe("Trip API", () => {
   const sampleTrips = [
     {
       title: "Best trip money can buy",
@@ -77,7 +77,7 @@ describe.only("Trip API", () => {
   });
 
   it("Unauthorized in GET", () => {
-    return makeRequest().get(`${testURL}/logged`).expect(401);
+    return makeRequest().get(`${testURL}/manager`).expect(401);
   });
 
   it("Unauthorized in POST", () => {
@@ -139,6 +139,51 @@ describe.only("Trip API", () => {
       .put(`${testURL}/publish`)
       .set(authHeader)
       .expect(400, { reason: "Missing fields" });
+  });
+
+  it("POST trip", async () => {
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        expect(response.body.title).to.equal(sampleTrips[0].title);
+        expect(response.body.description).to.equal(sampleTrips[0].description);
+        expect(response.body.requirements[0]).to.equal(
+          sampleTrips[0].requirements[0]
+        );
+      });
+  });
+
+  it("PUT trip", async () => {
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[1] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .put(`${testURL}/${response.body._id}`)
+          .set(authHeader)
+          .send({ trip: sampleTrips[0] })
+          .expect(200)
+          .then((response) => {
+            expect(response.body.title).to.equal(sampleTrips[0].title);
+            expect(response.body.description).to.equal(
+              sampleTrips[0].description
+            );
+            expect(response.body.requirements[0]).to.equal(
+              sampleTrips[0].requirements[0]
+            );
+          });
+      });
   });
 
   it("PUBLISH trip", async () => {
@@ -263,7 +308,7 @@ describe.only("Trip API", () => {
               true
             );
             return makeRequest()
-              .get(`${testURL}/logged`)
+              .get(`${testURL}/manager`)
               .set(authHeader)
               .expect(200)
               .then((response) => {
@@ -319,6 +364,41 @@ describe.only("Trip API", () => {
       .get(`${testURL}/display/${mongoose.Types.ObjectId().toHexString()}`)
       .set(authHeader)
       .expect(404);
+  });
+
+  it("Trying to SHOW non-published", async () => {
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .get(`${testURL}/display/${response.body._id}`)
+          .expect(404);
+      });
+  });
+
+  it("Trying to SEARCH non-published", async () => {
+    return makeRequest()
+      .post(testURL)
+      .set(authHeader)
+      .send({ trip: sampleTrips[0] })
+      .expect(200)
+      .then((response) => {
+        expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
+          true
+        );
+        return makeRequest()
+          .get(`${testURL}/search/${sampleTrips[0].title}`)
+          .expect(200)
+          .then((response) => {
+            expect(response.body.length).to.equal(0);
+          });
+      });
   });
 
   it("Trying to SEARCH trips using empty keyword", async () => {
