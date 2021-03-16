@@ -39,10 +39,10 @@ const getMyTrips = async (req, res) => {
 };
 
 /**
- * Get one trip by id
+ * Get one public trip by id
  * @route GET /trips/display/{id}
  * @group Trip - Trip
- * @param {string} id.path.required     - Sponsorship identifier
+ * @param {string} id.path.required - Trip identifier
  * @returns {Trip}   200 - Return selected trip
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
@@ -52,6 +52,31 @@ const getTrip = async (req, res) => {
     const doc = await Trip.findOne({
       _id: req.params.id,
       isPublished: true,
+    }).exec();
+    if (doc) {
+      return res.status(200).json(doc);
+    } else {
+      return res.sendStatus(404);
+    }
+  } catch (err) {
+    res.status(500).json({ reason: "Database error" });
+  }
+};
+
+/**
+ * Get trip by id
+ * @route GET /trips/display/manager/{id}
+ * @group Trip - Trip
+ * @param {string} id.path.required - Trip identifier
+ * @returns {Trip}   200 - Return selected trip
+ * @returns {} 401 - User is not authorized to perform this operation
+ * @returns {DarabaseError} 500 - Database error
+ */
+const getMyTrip = async (req, res) => {
+  try {
+    const doc = await Trip.findOne({
+      _id: req.params.id,
+      managerID: req.managerID,
     }).exec();
     if (doc) {
       return res.status(200).json(doc);
@@ -83,7 +108,6 @@ const searchTrips = async (req, res) => {
     }).exec();
     return res.status(200).json(docs);
   } catch (err) {
-    console.log(err);
     res.status(500).json({ reason: "Database error" });
   }
 };
@@ -103,7 +127,8 @@ const createTrip = async (req, res) => {
   delete req.body.trip.isPublished;
   delete req.body.trip.isCancelled;
   delete req.body.trip.price;
-  delete req.body.trip.cancellReason;
+  delete req.body.trip.cancelReason;
+  req.body.trip.managerID = req.managerID;
 
   req.body.trip.ticker = generateTicker();
 
@@ -111,7 +136,6 @@ const createTrip = async (req, res) => {
     const doc = await new Trip(req.body.trip).save();
     res.status(200).send(doc);
   } catch (err) {
-    console.log(err);
     res.status(500).json({ reason: "Database error" });
   }
 };
@@ -129,7 +153,7 @@ const createTrip = async (req, res) => {
 const updateTrip = async (req, res) => {
   delete req.body.trip.isPublished;
   delete req.body.trip.isCancelled;
-  delete req.body.trip.cancellReason;
+  delete req.body.trip.cancelReason;
   delete req.body.trip.ticker;
   delete req.body.trip.managerID;
 
@@ -137,12 +161,11 @@ const updateTrip = async (req, res) => {
     return acc + val.price;
   }, 0);
 
-  //TODO managerID inside body temporally
   try {
     let doc = await Trip.findOneAndUpdate(
       {
-        _id: req.body.trip._id,
-        managerID: req.body.managerID,
+        _id: req.params.id,
+        managerID: req.managerID,
       },
       req.body.trip
     );
@@ -172,6 +195,7 @@ const deleteTrip = async (req, res) => {
     const doc = await Trip.findOneAndDelete({
       _id: req.params.id,
       managerID: req.managerID,
+      isPublished: false,
     });
     if (doc) {
       return res.status(200).json(doc);
@@ -199,8 +223,11 @@ const cancelTrip = async (req, res) => {
       {
         _id: req.params.id,
         managerID: req.managerID,
+        isPublished: true,
+        cancelReason: "",
+        startDate: { $gte: Date.now() },
       },
-      { isCancelled: true, cancellReason: req.body.cancellReason }
+      { isCancelled: true, cancelReason: req.body.cancelReason }
     );
     if (doc) {
       doc = await Trip.findById(req.params.id);
@@ -229,6 +256,7 @@ const publishTrip = async (req, res) => {
       {
         _id: req.params.id,
         managerID: req.managerID,
+        startDate: { $gte: Date.now() },
       },
       { isPublished: true }
     );
@@ -278,6 +306,12 @@ module.exports.register = (apiPrefix, router) => {
     Validators.Required("params", "id"),
     getTrip
   );
+  router.get(
+    `${apiURL}/display/manager/:id?`,
+    CheckManager,
+    Validators.Required("params", "id"),
+    getMyTrip
+  );
   router.post(
     apiURL,
     CheckManager,
@@ -286,7 +320,7 @@ module.exports.register = (apiPrefix, router) => {
     createTrip
   );
   router.put(
-    apiURL,
+    `${apiURL}/:id?`,
     CheckManager,
     Validators.Required("params", "id"),
     Validators.Required("body", "trip"),
@@ -305,8 +339,7 @@ module.exports.register = (apiPrefix, router) => {
     `${apiURL}/cancel/:id?`,
     CheckManager,
     Validators.Required("params", "id"),
-    Validators.CheckNotPublished(),
-    Validators.Required("body", "cancellReason"),
+    Validators.Required("body", "cancelReason"),
     Validators.CheckNotStarted(),
     Validators.CheckNoApplicationsAttached(),
     cancelTrip

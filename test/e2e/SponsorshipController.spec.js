@@ -300,7 +300,7 @@ describe("Sponsorship API", () => {
       .expect(404)
       .then(() => {
         return makeRequest()
-          .get(`/api/v1/trips//random-sponsorship`)
+          .get(`/api/v1/trips/random-sponsorship`)
           .expect(404);
       })
       .then(() => {
