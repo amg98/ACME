@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const tripSchema = require("./TripSchema");
+const TripSchema = require("./TripSchema").schema;
 const systemParamsController = require("../routes/SystemParamsController");
 
 const FinderSchema = new Schema({
@@ -10,7 +10,8 @@ const FinderSchema = new Schema({
     dateInit: Schema.Types.Date,
     dateEnd: Schema.Types.Date,
     trips: {
-        type: [tripSchema],
+        type: [TripSchema],
+        default: undefined,
         expires: systemParamsController.getFinderResultsTTL()
     },
     actorID: Schema.Types.ObjectId

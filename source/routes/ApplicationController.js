@@ -25,17 +25,17 @@ const getOne = (req, res) => {
 
 /**
  * Find applications by Trip
- * @route GET /applications/trips/{tripId}
+ * @route GET /applications/trips/{tripID}
  * @group Applications - Application to a trip
- * @param {string} tripId.path.required       - Trip identifier
+ * @param {string} tripID.path.required       - Trip identifier
  * @returns {Array.<Application>}         200 - Returns the requested application
  * @returns {}                            401 - User is not authorized to perform this operation
  * @returns {DatabaseError}               500 - Database error
  */
 const getAllByTripId = (req, res) => {
-  console.log(Date() + "-GET /applications/trips/tripId");
+  console.log(Date() + "-GET /applications/trips/tripID");
 
-  Application.find({ tripId: req.params.tripId })
+  Application.find({ tripID: req.params.tripID })
     .lean()
     .exec(function (err, applications) {
       if (err) {
@@ -239,7 +239,7 @@ const deleteOne = async(req, res) => {
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
   router.get(apiURL + '/:applicationID', getOne);
-  router.get(apiURL + '/trips/:tripId', getAllByTripId);
+  router.get(apiURL + '/trips/:tripID', getAllByTripId);
   router.get(apiURL + '/explorers/:explorerID', getAllByExplorerId);
   router.post(apiURL, createOne);
   router.put(apiURL, editOne);
@@ -254,7 +254,7 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} rejectReason              - Reject Reason
  * @property {string} status                    - Status
  * @property {string} comments                  - Comments
- * @property {string} tripId                    - Trip to apply
+ * @property {string} tripID                    - Trip to apply
  * @property {string} explorerId                - Explorer who applies
  */
 

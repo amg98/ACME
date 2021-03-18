@@ -1,11 +1,12 @@
+const { DocumentProvider } = require("mongoose");
 const Finder = require("../models/FinderSchema");
 const Trip = require("../models/TripSchema");
 
 /**
- * Get a specific finder for an actor
- * @route GET /finders/{finderId}
+ * Get a specific finder
+ * @route GET /finders/{finderID}
  * @group Finder - Find trips
- * @param {string} finderId.path.required             - Actor identifier
+ * @param {string} finderID.path.required             - Finder identifier
  * @returns {Finder}                200 - Returns the requested Finder
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
@@ -13,14 +14,14 @@ const Trip = require("../models/TripSchema");
 const getOne = (req, res) => {
     console.log(Date() + "-GET /finder");
     // Necesita explorerId autenticado
-    Finder.findById(req.params.finderId, function (err, finder) {
+    Finder.findById(req.params.finderID, async function (err, finder) {
         if (err) {
             res.send(err);
         }
         else {
             if (finder.trips.length === 0) {
                 //Resultados expirados
-                let trips = Trip.find({
+                let trips = await Trip.find({
                     ticker: '/' + req.body.keyword + '/',
                     title: '/' + req.body.keyword + '/',
                     startDate: {
@@ -44,6 +45,45 @@ const getOne = (req, res) => {
 };
 
 /**
+ * Get a specific finder
+ * @route GET /finders/actors/{actorID}
+ * @group Finder - Find trips
+ * @param {string} actorID.path.required             - Actor identifier
+ * @returns {Finder}                200 - Returns the requested Finder
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {DatabaseError}         500 - Database error
+ */
+ const getOneByActor = (req, res) => {
+    console.log(Date() + "-GET /finders/actor");
+    // Necesita explorerId autenticado
+    Finder.findOne({ actorID: req.params.actorID }, async function (err, finder) {
+        if (err) {
+            res.send(err);
+        }
+        else {
+            if (finder.trips.length === 0) {
+                //Resultados expirados
+                const keywordRegex = new RegExp(finder.keyword, 'i')
+
+                let trips = await Trip.find(
+                    { 
+                        $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+                        $and: [{price: {$gte: finder.minPrice, $lt: finder.maxPrice}},
+                                {startDate: { $gte: new Date(finder.dateInit)}},
+                                {endDate: { $lt: new Date(finder.dateEnd)}}
+                        ]
+                })
+
+                finder.trips = trips;
+                res.json(finder);
+            } else {
+                res.json(finder);
+            }
+        }
+    });
+};
+
+/**
  * Create a new finder
  * @route POST /finders
  * @group Finder - Find trips
@@ -53,29 +93,27 @@ const getOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const createOne = (req, res) => {
+const createOne = async (req, res) => {
     // Necesita explorerId autenticado
     console.log(Date() + "-POST /finder");
-    let trips = Trip.find({
-        ticker: '/' + req.body.keyword + '/',
-        title: '/' + req.body.keyword + '/',
-        startDate: {
-            $gte: new Date(req.body.dateInit),
-        },
-        endDate: {
-            $lt: new Date(req.body.dateEnd)
-        },
-        price: {
-            $gte: req.body.minPrice,
-            $lt: req.body.maxPrice
-        }
+
+    const keywordRegex = new RegExp(req.body.keyword, 'i')
+
+    let trips = await Trip.find(
+        { 
+            $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+            $and: [{price: {$gte: req.body.minPrice, $lt: req.body.maxPrice}},
+                    {startDate: { $gte: new Date(req.body.dateInit)}},
+                    {endDate: { $lt: new Date(req.body.dateEnd)}}
+            ]
     })
     const finder = {
-        ticker: req.body.ticker,
+        keyword: req.body.keyword,
         minPrice: req.body.minPrice,
         maxPrice: req.body.maxPrice,
-        dateInit: req.body.dateInit,
-        dateEnd: req.body.dateEnd,
+        dateInit: new Date(req.body.dateInit),
+        dateEnd: new Date(req.body.dateEnd),
+        actorID: req.body.actorID,
         trips: trips
     }
 
@@ -89,7 +127,7 @@ const createOne = (req, res) => {
 
 /**
  * Update an existing finder for a specific actor
- * @route PUT /finders
+ * @route PUT /finders/{finderID}
  * @group Finder - Find trips
  * @param {FinderPut.model} finder.body.required  - Finder updates
  * @returns {Finder}                200 - Returns the current state for this finder
@@ -97,34 +135,57 @@ const createOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const editOne = (req, res) => {
+const editOne = async(req, res) => {
     // Necesita explorerId autenticado, _id
-    Finder.findOneAndUpdate({ _id: req.body.finder._id }, req.body.finder)
-        .then(doc => {
-            if (doc) {
-                return Finder.findById(doc._id);
-            } else {
-                res.sendStatus(401);
-            }
+    //Refresca el tiempo 
+
+
+    let doc = await Finder.findById(req.body._id);
+    if (doc) {
+        const keywordRegex = new RegExp(req.body.keyword, 'i')
+
+        let trips = await Trip.find(
+            { 
+                $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+                $and: [{price: {$gte: req.body.minPrice, $lt: req.body.maxPrice}},
+                        {startDate: { $gte: new Date(req.body.dateInit)}},
+                        {endDate: { $lt: new Date(req.body.dateEnd)}}
+                ]
         })
+
+        const finder = {
+            keyword: req.body.keyword,
+            minPrice: req.body.minPrice,
+            maxPrice: req.body.maxPrice,
+            dateInit: req.body.dateInit,
+            dateEnd: req.body.dateEnd,
+            actorID: doc.actorID,
+            trips: trips
+        }
+
+        doc = await Finder.findOneAndUpdate({ _id: req.body._id }, finder)
         .then(doc => res.status(200).json(doc))
         .catch(err => res.status(500).json({ reason: "Database error" }));
+
+    } else {
+        return res.sendStatus(401);
+    }
 };
 
 /**
  * Delete an existing finder for a specific actor
- * @route DELETE /finders/{finderId}
+ * @route DELETE /finders/{finderID}
  * @group Finder - Find trips
- * @param {string} finderId.path.required     - Finder identifier
+ * @param {string} finderID.path.required     - Finder identifier
  * @returns {Finder}                200 - Returns the deleted finder
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
-const deleteOne = (req, res) => {
+const deleteOne = async (req, res) => {
     // Necesita actorID autenticado, _id
     try {
-        const doc = await Finder.findOneAndDelete({ _id: req.params.finderId });
+        const doc = await Finder.findOneAndDelete({ _id: req.params.finderID });
         if (doc) {
             return res.status(200).json(doc);
         } else {
@@ -137,17 +198,29 @@ const deleteOne = (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/finders`;
-    router.get(apiURL + '/:finderId', getOne);
+    router.get(apiURL + '/:finderID', getOne);
+    router.get(apiURL + '/actors/:actorID', getOneByActor);
     router.post(apiURL, createOne);
-    router.put(apiURL + '/:finderId', editOne);
-    router.delete(apiURL + '/:finderId', deleteOne)
+    router.put(apiURL + '/:finderID', editOne);
+    router.delete(apiURL + '/:finderID', deleteOne)
 };
 
 /**
  * @typedef Finder
  * @property {string} keyword          - Keyword for search
- * @property {string} minPrice         - Min Trip Price
- * @property {string} maxPrice         - Max Trip Price
+ * @property {number} minPrice         - Min Trip Price
+ * @property {number} maxPrice         - Max Trip Price
  * @property {string} dateInit         - Date Init
  * @property {string} dateEnd          - End Date
+ * @property {string} actorID          - Actor ID
+ */
+
+/**
+ * @typedef FinderPut
+ * @property {string} _id.required  - applicationID
+ * @property {string} keyword            - Keyword for search
+ * @property {number} minPrice           - Min Trip Price
+ * @property {number} maxPrice           - Max Trip Price
+ * @property {string} dateInit           - Date Init
+ * @property {string} dateEnd            - End Date
  */
