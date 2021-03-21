@@ -7,8 +7,8 @@ const FinderSchema = new Schema({
     keyword: Schema.Types.String,
     minPrice: Schema.Types.Number,
     maxPrice: Schema.Types.Number,
-    dateInit: Schema.Types.Date,
-    dateEnd: Schema.Types.Date,
+    startDate: Schema.Types.Date,
+    endDate: Schema.Types.Date,
     trips: {
         type: [TripSchema],
         default: undefined,

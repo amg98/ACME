@@ -99,14 +99,50 @@ module.exports.TripExists = (objectName, subobjectName, fieldName) => (req, res,
 }
 
 module.exports.CheckDates = (objectName, fieldName) => (req, res, next) => {
-    startDate = new Date(req[objectName][fieldName]["startDate"]);
-    endDate = new Date(req[objectName][fieldName]["endDate"]);
-    currentDate = new Date();
 
-    if (startDate > currentDate && endDate > startDate) {
+    if (req[objectName][fieldName]["startDate"] instanceof Date && !isNaN(req[objectName][fieldName]["startDate"].valueOf())
+        && req[objectName][fieldName]["endDate"] instanceof Date && !isNaN(req[objectName][fieldName]["endDate"].valueOf())){
+            startDate = new Date(req[objectName][fieldName]["startDate"]);
+            endDate = new Date(req[objectName][fieldName]["endDate"]);
+            currentDate = new Date();
+        
+            if (startDate > currentDate && endDate > startDate) {
+                next();
+            } else {
+                res.status(400).json({ reason: "Date chosen wrongly" });
+            }
+        }else{
+            res.status(400).json({ reason: "Incorrect date" });
+        }
+};
+
+module.exports.CheckDatesFinder = () => (req, res, next) => {
+    if(typeof req["body"]["endDate"] === "undefined" && !isNaN(Date.parse(req["body"]["startDate"]))){
         next();
-    } else {
-        res.status(400).json({ reason: "Date chosen wrongly" });
+    }else if(typeof req["body"]["startDate"] === "undefined" && !isNaN(Date.parse(req["body"]["endDate"]))){
+        next();
+    }else if(typeof req["body"]["startDate"] === "undefined" && typeof req["body"]["endDate"] === "undefined"){
+        next();
+    }else if (!isNaN(Date.parse(req["body"]["endDate"]))&& !isNaN(Date.parse(req["body"]["startDate"]))){
+        startDate = new Date(req["body"]["startDate"]);
+        endDate = new Date(req["body"]["endDate"]);
+
+        if (endDate > startDate) {
+            next();
+        } else {
+            res.status(400).json({ reason: "Date chosen wrongly" });
+        }
+    }else{
+        res.status(400).json({ reason: "Incorrect date" });
+    }
+};
+
+module.exports.CheckPricesFinder = () => (req, res, next) => {
+    if((typeof req.body.minPrice === "number" || typeof req.body.minPrice === "undefined") 
+    && (typeof req.body.maxPrice === "number" || typeof req.body.maxPrice === "undefined")){
+        next();
+    }else{
+        res.status(400).json({ reason: "Incorrect Prices" });
     }
 };
 

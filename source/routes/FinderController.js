@@ -1,6 +1,8 @@
 const { DocumentProvider } = require("mongoose");
 const Finder = require("../models/FinderSchema");
 const Trip = require("../models/TripSchema");
+const systemParamsController = require("./SystemParamsController");
+const Validators = require("../middlewares/Validators");
 
 /**
  * Get a specific finder
@@ -25,16 +27,16 @@ const getOne = (req, res) => {
                     ticker: '/' + req.body.keyword + '/',
                     title: '/' + req.body.keyword + '/',
                     startDate: {
-                        $gte: new Date(req.body.dateInit),
+                        $gte: new Date(req.body.startDate),
                     },
                     endDate: {
-                        $lt: new Date(req.body.dateEnd)
+                        $lt: new Date(req.body.endDate)
                     },
                     price: {
                         $gte: req.body.minPrice,
                         $lt: req.body.maxPrice
                     }
-                });
+                }).limit(systemParamsController.getFinderMaxResults());
                 finder.trips = trips;
                 res.json(finder);
             } else {
@@ -69,10 +71,10 @@ const getOne = (req, res) => {
                     { 
                         $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
                         $and: [{price: {$gte: finder.minPrice, $lt: finder.maxPrice}},
-                                {startDate: { $gte: new Date(finder.dateInit)}},
-                                {endDate: { $lt: new Date(finder.dateEnd)}}
+                                {startDate: { $gte: new Date(finder.startDate)}},
+                                {endDate: { $lt: new Date(finder.endDate)}}
                         ]
-                })
+                }).limit(systemParamsController.getFinderMaxResults());
 
                 finder.trips = trips;
                 res.json(finder);
@@ -97,22 +99,51 @@ const createOne = async (req, res) => {
     // Necesita explorerId autenticado
     console.log(Date() + "-POST /finder");
 
+    let sD = Date.parse(req.body.startDate)
+    let eD = Date.parse(req.body.endDate)
+    const maxResults = await systemParamsController.getFinderMaxResults();
+
+    if(isNaN(sD)){
+        sD = undefined
+    }
+    if(isNaN(eD)){
+        eD = undefined
+    }
+
+    let filters = {
+        price: {$gte: req.body.minPrice, $lt: req.body.maxPrice},
+        startDate: {$gte: sD},
+        endDate: {$lt: eD},
+    }
+
+    if(req.body.minPrice === undefined && req.body.maxPrice === undefined){
+        delete filters.price
+    }else if(req.body.minPrice === undefined && req.body.maxPrice !== undefined){
+        delete filters.price.$gte
+    }else if(req.body.minPrice !== undefined && req.body.maxPrice === undefined){
+        delete filters.price.$lt
+    }
+    if(filters.sD === undefined){
+        delete filters.startDate
+    }
+    if(filters.eD === undefined){
+        delete filters.endDate
+    }
+
     const keywordRegex = new RegExp(req.body.keyword, 'i')
 
     let trips = await Trip.find(
         { 
             $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
-            $and: [{price: {$gte: req.body.minPrice, $lt: req.body.maxPrice}},
-                    {startDate: { $gte: new Date(req.body.dateInit)}},
-                    {endDate: { $lt: new Date(req.body.dateEnd)}}
-            ]
-    })
+            $and: [filters]
+    }).limit(maxResults)
+
     const finder = {
         keyword: req.body.keyword,
         minPrice: req.body.minPrice,
         maxPrice: req.body.maxPrice,
-        dateInit: new Date(req.body.dateInit),
-        dateEnd: new Date(req.body.dateEnd),
+        startDate: sD,
+        endDate: eD,
         actorID: req.body.actorID,
         trips: trips
     }
@@ -148,27 +179,30 @@ const editOne = async(req, res) => {
             { 
                 $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
                 $and: [{price: {$gte: req.body.minPrice, $lt: req.body.maxPrice}},
-                        {startDate: { $gte: new Date(req.body.dateInit)}},
-                        {endDate: { $lt: new Date(req.body.dateEnd)}}
+                        {startDate: { $gte: new Date(req.body.startDate)}},
+                        {endDate: { $lt: new Date(req.body.endDate)}}
                 ]
-        })
+        }).limit(systemParamsController.getFinderMaxResults())
 
         const finder = {
+            _id: req.body._id,
             keyword: req.body.keyword,
             minPrice: req.body.minPrice,
             maxPrice: req.body.maxPrice,
-            dateInit: req.body.dateInit,
-            dateEnd: req.body.dateEnd,
+            startDate: req.body.startDate,
+            endDate: req.body.endDate,
             actorID: doc.actorID,
             trips: trips
         }
 
-        doc = await Finder.findOneAndUpdate({ _id: req.body._id }, finder)
-        .then(doc => res.status(200).json(doc))
+        doc = await Finder.findOneAndDelete({ _id: req.body._id })
         .catch(err => res.status(500).json({ reason: "Database error" }));
 
+        doc = await new Finder(finder).save()        
+        .then(doc => res.status(200).json(doc))
+        .catch(err => res.status(500).json({ reason: "Database error" }));
     } else {
-        return res.sendStatus(401);
+        return res.sendStatus(404);
     }
 };
 
@@ -200,7 +234,10 @@ module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/finders`;
     router.get(apiURL + '/:finderID', getOne);
     router.get(apiURL + '/actors/:actorID', getOneByActor);
-    router.post(apiURL, createOne);
+    router.post(apiURL,
+        Validators.CheckPricesFinder(),
+        Validators.CheckDatesFinder(),
+        createOne);
     router.put(apiURL + '/:finderID', editOne);
     router.delete(apiURL + '/:finderID', deleteOne)
 };
@@ -210,8 +247,8 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} keyword          - Keyword for search
  * @property {number} minPrice         - Min Trip Price
  * @property {number} maxPrice         - Max Trip Price
- * @property {string} dateInit         - Date Init
- * @property {string} dateEnd          - End Date
+ * @property {string} startDate         - Date Init
+ * @property {string} endDate          - End Date
  * @property {string} actorID          - Actor ID
  */
 
@@ -221,6 +258,6 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} keyword            - Keyword for search
  * @property {number} minPrice           - Min Trip Price
  * @property {number} maxPrice           - Max Trip Price
- * @property {string} dateInit           - Date Init
- * @property {string} dateEnd            - End Date
+ * @property {string} startDate           - Date Init
+ * @property {string} endDate            - End Date
  */

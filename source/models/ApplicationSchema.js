@@ -11,7 +11,7 @@ const ApplicationSchema = new Schema(
       default: "PENDING",
       required: [true],
     },
-    comments: Schema.Types.Array,
+    comments: [String],
     rejectReason: Schema.Types.String,
     explorerID: Schema.Types.ObjectId,
     tripID: Schema.Types.ObjectId,
