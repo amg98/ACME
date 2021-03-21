@@ -19,7 +19,7 @@ const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
     const doc = await Finder.findById(req.params.id);
     if(doc) {
-        return doc.value;
+        return res.status(200).send(doc);
     } else {
         return res.status(404).send("Finder not found");
     }
@@ -199,7 +199,7 @@ const editOne = async(req, res) => {
         .then(doc => res.status(200).json(doc))
         .catch(err => res.status(500).json({ reason: "Database error" }));
     } else {
-        return res.sendStatus(404);
+        return res.status(404).send("Finder not found");
     }
 };
 
