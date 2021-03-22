@@ -4,19 +4,29 @@ const TripSchema = require("../../source/models/TripSchema");
 const SponsorshipSchema = require("../../source/models/SponsorshipSchema");
 const { expect } = require("chai");
 
-describe("Sponsorship API", () => {
+describe.only("Sponsorship API", () => {
+
+    const sampleTrip = {
+        _id: mongoose.Types.ObjectId().toHexString(),
+        managerID: mongoose.Types.ObjectId().toHexString(),
+        title: "Excursion",
+        startDate: Date.now(),
+        endDate: Date.now(),
+        ticker: "111111-AAAA",
+        stages: [],
+    };
 
     const sampleSponsorship = [
         {
             bannerURL: "https://google.es",
             landingPageURL: "https://google.es",
-            tripID: mongoose.Types.ObjectId().toHexString()
+            tripID: sampleTrip._id,
         },
         {
             bannerURL: "https://facebook.es",
             landingPageURL: "https://facebook.es",
-            tripID: mongoose.Types.ObjectId().toHexString()
-        }
+            tripID: sampleTrip._id,
+        },
     ];
 
     const testURL = "/api/v1/sponsorships";
@@ -24,32 +34,25 @@ describe("Sponsorship API", () => {
 
     beforeEach(async () => {
         await resetDB();
+        await TripSchema.insertMany([ sampleTrip ]);
         const userData = await createUserAndLogin("SPONSOR");
         authHeader = userData.authHeader;
     });
 
     it("Unauthorized in GET", () => {
-        return makeRequest()
-            .get(testURL)
-            .expect(401);
+        return makeRequest().get(testURL).expect(401);
     });
 
     it("Unauthorized in POST", () => {
-        return makeRequest()
-            .post(testURL)
-            .expect(401);
+        return makeRequest().post(testURL).expect(401);
     });
 
     it("Unauthorized in PUT", () => {
-        return makeRequest()
-            .put(testURL)
-            .expect(401);
+        return makeRequest().put(testURL).expect(401);
     });
 
     it("Unauthorized in DELETE", () => {
-        return makeRequest()
-            .delete(testURL)
-            .expect(401);
+        return makeRequest().delete(testURL).expect(401);
     });
 
     it("Missing fields in POST", () => {
@@ -86,16 +89,20 @@ describe("Sponsorship API", () => {
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .get(`${testURL}/${response.body}`)
                     .set(authHeader)
                     .expect(200);
             })
-            .then(response => {
-                expect(response.body.bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                expect(response.body.landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+            .then((response) => {
+                expect(response.body.bannerURL).to.equal(
+                    sampleSponsorship[0].bannerURL
+                );
+                expect(response.body.landingPageURL).to.equal(
+                    sampleSponsorship[0].landingPageURL
+                );
                 expect(response.body.tripID).to.equal(sampleSponsorship[0].tripID);
                 expect(response.body.isPaid).to.equal(false);
             });
@@ -107,30 +114,44 @@ describe("Sponsorship API", () => {
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .post(testURL)
                     .set(authHeader)
                     .send({ sponsorship: sampleSponsorship[0] })
-                    .expect(200)
-            })
-            .then(response => {
-                expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
-                return makeRequest()
-                    .get(testURL)
-                    .set(authHeader)
                     .expect(200);
             })
-            .then(response => {
+            .then((response) => {
+                expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
+                return makeRequest().get(testURL).set(authHeader).expect(200);
+            })
+            .then((response) => {
                 expect(response.body.length).to.equal(2);
                 response.body.forEach((entry, i) => {
-                    expect(response.body[i].bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                    expect(response.body[i].landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+                    expect(response.body[i].bannerURL).to.equal(
+                        sampleSponsorship[0].bannerURL
+                    );
+                    expect(response.body[i].landingPageURL).to.equal(
+                        sampleSponsorship[0].landingPageURL
+                    );
                     expect(response.body[i].tripID).to.equal(sampleSponsorship[0].tripID);
                     expect(response.body[i].isPaid).to.equal(false);
-                })
+                });
             });
+    });
+
+    it("Trying to POST with missing tripID", () => {
+        return makeRequest()
+            .post(testURL)
+            .set(authHeader)
+            .send({
+                sponsorship: {
+                    ...sampleSponsorship[0],
+                    tripID: mongoose.Types.ObjectId().toHexString(),
+                },
+            })
+            .expect(422);
     });
 
     it("Trying to POST with isPaid", () => {
@@ -140,20 +161,24 @@ describe("Sponsorship API", () => {
             .send({
                 sponsorship: {
                     ...sampleSponsorship[0],
-                    isPaid: true
-                }
+                    isPaid: true,
+                },
             })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .get(`${testURL}/${response.body}`)
                     .set(authHeader)
                     .expect(200);
             })
-            .then(response => {
-                expect(response.body.bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                expect(response.body.landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+            .then((response) => {
+                expect(response.body.bannerURL).to.equal(
+                    sampleSponsorship[0].bannerURL
+                );
+                expect(response.body.landingPageURL).to.equal(
+                    sampleSponsorship[0].landingPageURL
+                );
                 expect(response.body.tripID).to.equal(sampleSponsorship[0].tripID);
                 expect(response.body.isPaid).to.equal(false);
             });
@@ -166,34 +191,32 @@ describe("Sponsorship API", () => {
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 sponsorshipID = response.body;
-                return makeRequest()
-                    .get(testURL)
-                    .set(authHeader)
-                    .expect(200);
+                return makeRequest().get(testURL).set(authHeader).expect(200);
             })
-            .then(response => {
+            .then((response) => {
                 expect(response.body.length).to.equal(1);
                 return makeRequest()
                     .delete(`${testURL}/${sponsorshipID}`)
                     .set(authHeader)
                     .expect(200);
             })
-            .then(response => {
-                expect(response.body.bannerURL).to.equal(sampleSponsorship[0].bannerURL);
-                expect(response.body.landingPageURL).to.equal(sampleSponsorship[0].landingPageURL);
+            .then((response) => {
+                expect(response.body.bannerURL).to.equal(
+                    sampleSponsorship[0].bannerURL
+                );
+                expect(response.body.landingPageURL).to.equal(
+                    sampleSponsorship[0].landingPageURL
+                );
                 expect(response.body.tripID).to.equal(sampleSponsorship[0].tripID);
                 expect(response.body.isPaid).to.equal(false);
-                return makeRequest()
-                    .get(testURL)
-                    .set(authHeader)
-                    .expect(200);
+                return makeRequest().get(testURL).set(authHeader).expect(200);
             })
-            .then(response => {
+            .then((response) => {
                 expect(response.body.length).to.equal(0);
-            })
+            });
     });
 
     it("Correct sponsorship edit", () => {
@@ -203,49 +226,66 @@ describe("Sponsorship API", () => {
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
                     .set(authHeader)
                     .send({
                         sponsorship: {
-                            bannerURL: newBannerURL
-                        }
+                            bannerURL: newBannerURL,
+                        },
                     })
-                    .expect(200)
-            })
-            .then(response => {
-                expect(response.body.bannerURL).to.equal(newBannerURL);
-                return makeRequest()
-                    .get(testURL)
-                    .set(authHeader)
                     .expect(200);
             })
-            .then(response => {
+            .then((response) => {
+                expect(response.body.bannerURL).to.equal(newBannerURL);
+                return makeRequest().get(testURL).set(authHeader).expect(200);
+            })
+            .then((response) => {
                 expect(response.body.length).to.equal(1);
             });
     });
 
+    it("Trying to edit with missing tripID", () => {
+        return makeRequest()
+            .post(testURL)
+            .set(authHeader)
+            .send({ sponsorship: sampleSponsorship[0] })
+            .expect(200)
+            .then((response) => {
+                expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
+                return makeRequest()
+                    .put(`${testURL}/${response.body}`)
+                    .set(authHeader)
+                    .send({
+                        sponsorship: {
+                            tripID: mongoose.Types.ObjectId().toHexString(),
+                        },
+                    })
+                    .expect(422);
+            })
+    });
+    
     it("Trying to edit isPaid", () => {
         return makeRequest()
             .post(testURL)
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
                     .set(authHeader)
                     .send({
                         sponsorship: {
-                            isPaid: true
-                        }
+                            isPaid: true,
+                        },
                     })
-                    .expect(200)
+                    .expect(200);
             })
-            .then(response => {
+            .then((response) => {
                 expect(response.body.isPaid).to.equal(false);
             });
     });
@@ -257,19 +297,19 @@ describe("Sponsorship API", () => {
             .set(authHeader)
             .send({ sponsorship: sampleSponsorship[0] })
             .expect(200)
-            .then(response => {
+            .then((response) => {
                 expect(mongoose.Types.ObjectId.isValid(response.body)).to.equal(true);
                 return makeRequest()
                     .put(`${testURL}/${response.body}`)
                     .set(authHeader)
                     .send({
                         sponsorship: {
-                            sponsorID: newSponsorID
-                        }
+                            sponsorID: newSponsorID,
+                        },
                     })
-                    .expect(200)
+                    .expect(200);
             })
-            .then(response => {
+            .then((response) => {
                 expect(response.body.sponsorID).not.to.be.equal(newSponsorID);
             });
     });
@@ -277,7 +317,7 @@ describe("Sponsorship API", () => {
     it("Get random sponsorship for trip", async () => {
         const tripID = mongoose.Types.ObjectId();
         await TripSchema.collection.insertOne({
-            _id: tripID
+            _id: tripID,
         });
 
         const bakeSShip = (id) => ({
@@ -296,7 +336,7 @@ describe("Sponsorship API", () => {
 
         return makeRequest()
             .get(`/api/v1/trips/${tripID.toHexString()}/random-sponsorship`)
-            .expect(200)
+            .expect(200);
     });
 
     it("Missing tripID for random sponsorship", () => {
@@ -305,7 +345,7 @@ describe("Sponsorship API", () => {
             .expect(404)
             .then(() => {
                 return makeRequest()
-                    .get(`/api/v1/trips//random-sponsorship`)
+                    .get(`/api/v1/trips/random-sponsorship`)
                     .expect(404);
             })
             .then(() => {

@@ -30,8 +30,11 @@ module.exports.Range = (objectName, fieldName, minValue, maxValue) => (req, res,
 };
 
 const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async (req, res) => {
-    if (!req[objectName][subobjectName] || !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
-        !req[objectName][subobjectName][fieldName]) {
+    if (
+        !req[objectName][subobjectName] ||
+        !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
+        !req[objectName][subobjectName][fieldName]
+    ) {
         res.status(400).json({ reason: "Missing sponsorship ID" });
         throw 400;
     }
@@ -39,7 +42,10 @@ const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async 
     const id = req[objectName][subobjectName][fieldName];
     let docs;
     try {
-        docs = await SponsorshipSchema.find({ _id: id, sponsorID: req.sponsorID }).exec();
+        docs = await SponsorshipSchema.find({
+            _id: id,
+            sponsorID: req.sponsorID,
+        }).exec();
     } catch (err) {
         res.status(500).json({ reason: "Database error" });
         throw 500;
@@ -90,7 +96,10 @@ module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, ne
         return;
     }
 
-    if (!req[objectName][fieldName].successURL || !req[objectName][fieldName].cancelURL) {
+    if (
+        !req[objectName][fieldName].successURL ||
+        !req[objectName][fieldName].cancelURL
+    ) {
         return res.status(400).json({ reason: "Missing success/cancel URL" });
     }
 
@@ -98,7 +107,10 @@ module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, ne
         return res.status(400).json({ reason: "Missing language" });
     }
 
-    if (req[objectName][fieldName].lang !== "eng" && req[objectName][fieldName].lang !== "es") {
+    if (
+        req[objectName][fieldName].lang !== "eng" &&
+        req[objectName][fieldName].lang !== "es"
+    ) {
         return res.status(400).json({ reason: "Invalid language" });
     }
 
@@ -149,11 +161,23 @@ module.exports.CheckConfirmDataApplication = (objectName, fieldName) => async (r
     next();
 };
 
-module.exports.TripExists = (objectName, subobjectName, fieldName) => (req, res, next) => {
-    // TODO
-    // fieldName puede ser undefined
-    next();
-}
+module.exports.TripExists = (objectName, subobjectName, fieldName, optional=false) => async (req, res, next) => {
+    let tripID = req[objectName][subobjectName][fieldName];
+    if(optional && !tripID) {
+        return next();
+    }
+    
+    try {
+        const docs = await Trip.find({ _id: tripID }).exec();
+        if(docs.length === 1) {
+            next();
+        } else {
+            res.sendStatus(422);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
+};
 
 module.exports.CheckDates = (objectName, fieldName) => (req, res, next) => {
 
@@ -204,13 +228,7 @@ module.exports.CheckPricesFinder = () => (req, res, next) => {
 };
 
 module.exports.CheckNotPublished = () => (req, res, next) => {
-    let id;
-    if (req.body.trip) {
-        id = req.body.trip._id;
-    } else {
-        id = req.params.id;
-    }
-    Trip.findOne({ _id: id }, function (err, trip) {
+    Trip.findOne({ _id: req.params.id }, function (err, trip) {
         if (trip.isPublished) {
             res.status(400).json({ reason: "The trip has already been published" });
         } else {
@@ -219,29 +237,16 @@ module.exports.CheckNotPublished = () => (req, res, next) => {
     });
 };
 
-module.exports.CheckNotStarted = () => (req, res, next) => {
-    let id;
-    if (req.body.trip) {
-        id = req.body.trip._id;
-    } else {
-        id = req.params.id;
-    }
-    Trip.findOne({ _id: id }, function (err, trip) {
-        if (Date(trip.startDate) > Date.now()) {
-            res.status(400).json({ reason: "The trip has already started" });
-        } else {
-            next();
-        }
-    });
-};
-
 module.exports.CheckNoApplicationsAttached = () => (req, res, next) => {
     //TODO
-    Application.find({ tripID: req.params.id }, function (err, docs) {
-        if (docs.length > 0) {
-            res.status(400).json({ reason: "This trip has applications associated" });
-        } else {
-            next();
+    Application.find(
+        { tripId: req.params.id, status: "ACCEPTED" },
+        function (err, docs) {
+            if (docs.length > 0) {
+                res.status(400).json({ reason: "Trip has applications associated" });
+            } else {
+                next();
+            }
         }
-    });
+    );
 };
