@@ -1,41 +1,46 @@
 const Application = require("../models/ApplicationSchema");
+const Trip = require("../models/TripSchema");
+const Validators = require("../middlewares/Validators");
+const { CheckExplorer, CheckManager } = require("../middlewares/Auth");
+const SystemParamsController = require("./SystemParamsController");
+const Payments = require("../Payments");
+const ApplicationSchema = require("../models/ApplicationSchema");
+const Messages = require("../Messages");
 
 /**
  * Get a specific application for a explorer
- * @route GET /applications/{applicationId}
+ * @route GET /applications/{id}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required        - Application identifier
+ * @param {string} id.path.required        - Application identifier
  * @returns {Array.<Application>}   200 - Returns the requested application
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
  */
-const getOne = (req, res) => {
-  // Necesita explorerID autenticado
+const getOne = async(req, res) => {
   console.log(Date() + "-GET /applications");
 
-  Application.findById(req.params.applicationId, function (err, application) {
-    if (err) {
-      res.send(err);
-    }
-    else {
-      res.json(application);
-    }
-  });
+  const doc = await Application.findById(req.params.id);
+  if(doc) {
+      return res.status(200).send(doc);
+  } else {
+      return res.status(404).send("Application not found");
+  }
 };
 
 /**
  * Find applications by Trip
- * @route GET /applications/trips/{tripId}
+ * @route GET /applications/trips/{id}
  * @group Applications - Application to a trip
- * @param {string} tripId.path.required       - Trip identifier
+ * @param {string} id.path.required       - Trip identifier
  * @returns {Array.<Application>}         200 - Returns the requested application
  * @returns {}                            401 - User is not authorized to perform this operation
  * @returns {DatabaseError}               500 - Database error
  */
 const getAllByTripId = (req, res) => {
-  console.log(Date() + "-GET /applications/trips/tripId");
+  console.log(Date() + "-GET /applications/trips/id");
 
-  Application.find({ tripId: req.params.tripId })
+  Application.find({ tripID: req.params.id })
     .lean()
     .exec(function (err, applications) {
       if (err) {
@@ -49,25 +54,25 @@ const getAllByTripId = (req, res) => {
 
 /**
  * Find applications by explorer and status
- * @route GET /applications/explorers/{explorerId}
+ * @route GET /applications/explorers/{id}
  * @group Applications - Application to a trip
- * @param {string} explorerId.path.required - Explorer identifier
+ * @param {string} id.path.required - Explorer identifier
  * @param {string} status.query             - Status
  * @returns {Array.<Application>}       200 - Returns the requested application
  * @returns {}                          401 - User is not authorized to perform this operation
  * @returns {DatabaseError}             500 - Database error
  */
 const getAllByExplorerId = (req, res) => {
-  console.log(Date() + "-GET /applications/explorers/explorerId");
+  console.log(Date() + "-GET /applications/explorers/id");
   let status = "PENDING"
   const possibleStatus = ['PENDING', 'REJECTED', 'DUE', 'ACCEPTED', 'CANCELLED']
   if (possibleStatus.includes(req.query.status)) {
     status = req.query.status
   } else {
-    res.status(400).json("Not valid status submitted")
+    return res.status(400).json("Not valid status submitted")
   }
 
-  Application.find({ explorerId: req.params.explorerId, status: status })
+  Application.find({ explorerID: req.params.id, status: status })
     .lean()
     .exec(function (err, applications) {
       if (err) {
@@ -90,53 +95,71 @@ const getAllByExplorerId = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const createOne = async (req, res) => {
-  // Necesita explorerID autenticado
   console.log(Date() + "-POST /applications");
   try {
+    const trip = await Trip.findById(req.body.tripID);
+    if(trip){
+      if(trip.startDate <= new Date() || !trip.isPublished)
+        throw "InvalidTrip"
+    }else{
+      throw "NoTrip"
+    }
     const doc = await new Application(req.body).save();
     res.status(200).send(doc._id);
   } catch (err) {
-    res.status(500).json({ reason: "Database error" });
+    if(err === "NoTrip"){
+      res.status(500).json({ reason: "Trip not found" });
+    }else if(err === "InvalidTrip"){
+      res.status(500).json({ reason: "Invalid Trip" });
+    }else{
+      res.status(500).json({ reason: "Database error" });
+    }
   }
 };
 
 /**
  * Explorer cancel an application
- * @route PUT /applications/explorers/{applicationId}
+ * @route PUT /applications/{id}/cancel
  * @group Applications - Application to a trip
- * @param {ApplicationPutExplorer.model} application.body.required  - Application updates
+ * @param {string} id.path.required        - Application identifier
  * @returns {Application}           200 - Returns the current state for this application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
  */
-const explorerCancel = (req, res) => {
+const explorerCancel = async(req, res) => {
   console.log(Date() + "-PUT /applications - Explorer CANCEL");
-  // Puede recibir explorerId autenticado, para pasarla de ACCEPTED/PENDING a CANCELLED
-  Application.findById(req.body.applicationId, async function (err, application) {
-    if (err) {
-      res.send(err);
-    }
-    else {
-      if (application.status === "PENDING" || application.status === "ACCEPTED") {
-        let doc = await Application.findOneAndUpdate(req.body.applicationId, { status: "CANCELLED" }, function (err, applicationUpdated) {
-          if (err) {
-            res.send(err);
-          }
-        });
-        res.send(doc);
-      } else {
-        res.status(400).json("This application can't be updated")
+
+  let doc = await Application.findById(req.params.id);
+  if (doc) {
+    Application.findById(req.params.id, async function (err, application) {
+      if (err) {
+        res.send(err);
       }
-    }
-  });
+      else {
+        if (application.status === "PENDING" || application.status === "ACCEPTED") {
+          let doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
+            if (err) {
+              res.send(err);
+            }
+          });
+          res.send(doc);
+        } else {
+          res.status(400).json("This application can't be updated")
+        }
+      }
+    });
+  }else{
+    return res.status(404).send("Application not found");
+  }
 };
 
 /**
  * Update an existing application for a specific actor
- * @route PUT /applications/{applicationId}
+ * @route PUT /applications/{id}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required           - Application identifier
+ * @param {string} id.path.required           - Application identifier
  * @param {Application.model} application.body.required  - Finder updates
  * @returns {Application}           200 - Returns the current state for this application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
@@ -144,9 +167,8 @@ const explorerCancel = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  */
 const editOne = (req, res) => {
-  // Necesita managerId autenticado, _id
   console.log(Date() + "-PUT /applications");
-  Application.findOneAndUpdate({ _id: req.params.applicationId }, req.body)
+  Application.findOneAndUpdate({ _id: req.params.id }, req.body)
     .then(doc => {
       if (doc) {
         return Application.findById(doc._id);
@@ -160,18 +182,17 @@ const editOne = (req, res) => {
 
 /**
  * Manager update an application
- * @route PUT /applications/managers/{applicationId}
+ * @route PUT /applications/{id}/update
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required                     - Application identifier
+ * @param {string} id.path.required                                - Application identifier
  * @param {ApplicationPutManager.model} application.body.required  - Application updates
  * @returns {Application}           200 - Returns the current state for this application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
  */
-const managerUpdate = (req, res) => {
-  // Necesita managerId autenticado (Only managers can change), _id
-  // Tambien recibe el estado al que cambia
+const managerUpdate = async(req, res) => {
   console.log(Date() + "-PUT /applications - Manager update");
 
   let newStatus = "REJECTED"
@@ -181,29 +202,34 @@ const managerUpdate = (req, res) => {
     if (possibleStatus.includes(req.body.status)) {
       newStatus = req.body.status
     } else {
-      throw "STATUS"
+      throw "WrongStatus"
     }
 
-    Application.findById(req.params.applicationId, async function (err, application) {
-      if (err) {
-        res.send(err);
-      }
-      else {
-        if (application.status === "PENDING") {
-          let doc = await Application.findOneAndUpdate({ _id: req.params.applicationId }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
-            if (err) {
-              res.send(err);
-            }
-          });
-          res.send(doc);
-        } else {
-          res.status(400).json("This application can't be updated")
+    const doc = await Application.findById(req.params.id);
+    if(doc) {
+      Application.findById(req.params.id, async function (err, application) {
+        if (err) {
+          res.send(err);
         }
-      }
-    });
+        else {
+          if (application.status === "PENDING") {
+            let doc = await Application.findOneAndUpdate({ _id: req.params.id }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
+              if (err) {
+                res.send(err);
+              }
+            });
+            res.send(doc);
+          } else {
+            res.status(400).json("This application can't be updated")
+          }
+        }
+      });
+    } else {
+        return res.status(404).send("Application not found");
+    }
   }
   catch (err) {
-    if (err === "STATUS") {
+    if (err === "WrongStatus") {
       res.status(400).json("Not valid status submitted")
     } else {
       res.status(400).json("Database error")
@@ -214,18 +240,17 @@ const managerUpdate = (req, res) => {
 
 /**
  * Delete an existing application for a specific explorer
- * @route DELETE /applications/{applicationId}
+ * @route DELETE /applications/{applicationID}
  * @group Applications - Application to a trip
- * @param {string} applicationId.path.required        - Application identifier
+ * @param {string} applicationID.path.required        - Application identifier
  * @returns {Application}           200 - Returns the deleted application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
  */
 const deleteOne = async(req, res) => {
-  // Necesita explorerID autenticado, _id
   try {
-    const doc = await Application.findOneAndDelete({ _id: req.params.applicationId });
+    const doc = await Application.findOneAndDelete({ _id: req.params.applicationID });
     if (doc) {
       return res.status(200).json(doc);
     } else {
@@ -236,16 +261,132 @@ const deleteOne = async(req, res) => {
   }
 };
 
+/**
+ * Generate a paypal URL for an application payment
+ * @route POST /applications/payment
+ * @group Applications - Application to a trip
+ * @param {ApplicationPaymentPost.model} paymentData.body.required    - Payment data
+ * @returns {string}                200 - Returns the paypal URL, which can be used to pay
+ * @returns {ValidationError}       400 - Supplied parameters are invalid
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Specified application does not exist
+ * @returns {DatabaseError}         500 - Database or payment error
+ */
+ const createPayment = async (req, res) => {
+  try {
+      const flatRate = await SystemParamsController.getFlatRate();
+
+      const payment = await Payments.createPayment({
+          successURL: req.body.paymentData.successURL,
+          cancelURL: req.body.paymentData.cancelURL,
+          itemList: [{
+              "name": Messages.APPLICATION_PAYMENT_NAME[req.body.paymentData.lang],
+              "sku": "001",
+              "price": flatRate.toString(),
+              "currency": "EUR",
+              "quantity": 1
+          }],
+          amount: {
+              "currency": "EUR",
+              "total": flatRate.toString(),
+          },
+          description: Messages.APPLICATION_PAYMENT_DESC[req.body.paymentData.lang],
+      });
+
+      try {
+          let doc = await ApplicationSchema.findOneAndUpdate({ _id: req.body.paymentData.id, status: "DUE" }, { paymentID: payment.paymentID });
+          if (!doc) {
+              throw "Database error";
+          }
+      } catch (err) {
+          res.status(500).json({ reason: "Database error" });
+      }
+
+      return res.status(200).send(payment.paymentURL);
+  } catch (err) {
+      res.status(500).json({ reason: "Payment error" });
+  }
+};
+
+/**
+* Confirm a paypal payment for an application
+* @route POST /applications/payment-confirm
+* @group Applications - Application to a trip
+* @param {ApplicationPaymentConfirmPost.model} confirmData.body.required    - Payment confirmation data
+* @returns {}                      204 - Payment has been confirmed successfully
+* @returns {ValidationError}       400 - Supplied parameters are invalid
+* @returns {}                      401 - User is not authorized to perform this operation
+* @returns {}                      404 - Specified application does not exist
+* @returns {DatabaseError}         500 - Database error
+*/
+const confirmPayment = async (req, res) => {
+  try {
+
+      const flatRate = await SystemParamsController.getFlatRate();
+
+      await Payments.executePayment({
+          payerID: req.body.confirmData.payerID,
+          paymentID: req.body.confirmData.paymentID,
+          amount: {
+              "currency": "EUR",
+              "total": flatRate.toString(),
+          },
+      });
+
+      try {
+          let doc = await ApplicationSchema.findOneAndUpdate({
+              _id: req.body.confirmData.id,
+              paymentID: req.body.confirmData.paymentID
+          }, { status: "ACCEPTED" });
+          if (doc) {
+              return res.sendStatus(204);
+          } else {
+              throw "Database error";
+          }
+      } catch (err) {
+          res.status(500).json({ reason: "Database error" });
+      }
+  } catch (err) {
+      res.status(500).json({ reason: "Payment error" });
+  }
+};
+
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
-  router.get(apiURL + '/:applicationId', getOne);
-  router.get(apiURL + '/trips/:tripId', getAllByTripId);
-  router.get(apiURL + '/explorers/:explorerId', getAllByExplorerId);
-  router.post(apiURL, createOne);
-  router.put(apiURL, editOne);
-  router.put(apiURL + '/explorers/:applicationId', explorerCancel);
-  router.put(apiURL + '/managers/:applicationId', managerUpdate);
-  router.delete(apiURL + '/:applicationId', deleteOne)
+  router.get(apiURL + '/:id',
+    CheckExplorer,
+    getOne);
+  router.get(apiURL + '/trips/:id',
+    CheckManager,
+    getAllByTripId);
+  router.get(apiURL + '/explorers/:id',
+    CheckExplorer,
+    getAllByExplorerId);
+  router.post(apiURL,
+    CheckExplorer,
+    createOne);
+  router.put(apiURL,
+    CheckExplorer,
+    editOne);
+  router.put(apiURL + '/:id/cancel',
+    CheckExplorer,
+    explorerCancel);
+  router.put(apiURL + '/:id/update',
+    CheckManager,
+    managerUpdate);
+  router.delete(apiURL + '/:id',
+    CheckExplorer,
+    deleteOne)
+  router.post(`${apiURL}/payment`, 
+    /*CheckExplorer,*/
+    Validators.CheckPaymentDataApplication("body", "paymentData"),
+    Validators.Required("body", "paymentData"), 
+    createPayment);
+  router.post(`${apiURL}/payment-confirm`, 
+    /*CheckExplorer,*/
+    Validators.CheckConfirmDataApplication("body", "confirmData"),
+    Validators.Required("body", "confirmData"), 
+    confirmPayment);
 };
 
 /**
@@ -254,13 +395,8 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} rejectReason              - Reject Reason
  * @property {string} status                    - Status
  * @property {string} comments                  - Comments
- * @property {string} tripId                    - Trip to apply
- * @property {string} explorerId                - Explorer who applies
- */
-
-/**
- * @typedef ApplicationPutExplorer
- * @property {string} applicationId.required  - ApplicationId
+ * @property {string} tripID                    - Trip to apply
+ * @property {string} explorerID                - Explorer who applies
  */
 
 /**
@@ -272,6 +408,31 @@ module.exports.register = (apiPrefix, router) => {
 /**
  * @typedef ApplicationPost
  * @property {string} comments                  - Comments
- * @property {string} tripId.required           - Trip to apply
- * @property {string} explorerId.required       - Explorer who applies
+ * @property {string} tripID.required           - Trip to apply
+ * @property {string} explorerID.required       - Explorer who applies
+ */
+
+/**
+* @typedef ApplicationPaymentPost
+* @property {ApplicationPayment.model} paymentData - Application to pay
+*/
+
+/**
+ * @typedef ApplicationPayment
+ * @property {string} id                        - Application ID to pay
+ * @property {string} successURL                - URL to redirect on payment success
+ * @property {string} cancelURL                 - URL to redirect on payment cancellation
+ * @property {string} lang                      - Language for descriptions. Available: eng/es
+ */
+
+/**
+* @typedef ApplicationPaymentConfirmPost
+* @property {ApplicationPaymentConfirm.model} confirmData - Application to update
+*/
+
+/**
+ * @typedef ApplicationPaymentConfirm
+ * @property {string} id                        - Application to pay
+ * @property {string} paymentID                 - Paypal payment ID
+ * @property {string} payerID                   - Paypal payer ID
  */

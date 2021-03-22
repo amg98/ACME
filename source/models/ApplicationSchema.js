@@ -11,10 +11,11 @@ const ApplicationSchema = new Schema(
       default: "PENDING",
       required: [true],
     },
-    comments: Schema.Types.Array,
+    comments: [String],
     rejectReason: Schema.Types.String,
-    explorerId: Schema.Types.ObjectId,
-    tripId: Schema.Types.ObjectId,
+    explorerID: Schema.Types.ObjectId,
+    tripID: Schema.Types.ObjectId,
+    paymentID: Schema.Types.String,
 }, {
     timestamps: {
       createdAt: "timeStamp",
