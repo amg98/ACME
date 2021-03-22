@@ -240,9 +240,9 @@ const managerUpdate = async(req, res) => {
 
 /**
  * Delete an existing application for a specific explorer
- * @route DELETE /applications/{applicationID}
+ * @route DELETE /applications/{id}
  * @group Applications - Application to a trip
- * @param {string} applicationID.path.required        - Application identifier
+ * @param {string} id.path.required        - Application identifier
  * @returns {Application}           200 - Returns the deleted application
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
@@ -250,7 +250,7 @@ const managerUpdate = async(req, res) => {
  */
 const deleteOne = async(req, res) => {
   try {
-    const doc = await Application.findOneAndDelete({ _id: req.params.applicationID });
+    const doc = await Application.findOneAndDelete({ _id: req.params.id });
     if (doc) {
       return res.status(200).json(doc);
     } else {
@@ -378,12 +378,12 @@ module.exports.register = (apiPrefix, router) => {
     CheckExplorer,
     deleteOne)
   router.post(`${apiURL}/payment`, 
-    /*CheckExplorer,*/
+    CheckExplorer,
     Validators.CheckPaymentDataApplication("body", "paymentData"),
     Validators.Required("body", "paymentData"), 
     createPayment);
   router.post(`${apiURL}/payment-confirm`, 
-    /*CheckExplorer,*/
+    CheckExplorer,
     Validators.CheckConfirmDataApplication("body", "confirmData"),
     Validators.Required("body", "confirmData"), 
     confirmPayment);
