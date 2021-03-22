@@ -15,6 +15,7 @@ const ApplicationSchema = new Schema(
     rejectReason: Schema.Types.String,
     explorerID: Schema.Types.ObjectId,
     tripID: Schema.Types.ObjectId,
+    paymentID: Schema.Types.String,
 }, {
     timestamps: {
       createdAt: "timeStamp",

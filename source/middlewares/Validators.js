@@ -56,6 +56,33 @@ const CheckSponsorshipNotPaid = (objectName, subobjectName, fieldName) => async 
     }
 };
 
+const CheckApplicationNotPaid = (objectName, subobjectName, fieldName) => async (req, res) => {
+    if (!req[objectName][subobjectName] || !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
+        !req[objectName][subobjectName][fieldName]) {
+        res.status(400).json({ reason: "Missing application ID" });
+        throw 400;
+    }
+
+    const id = req[objectName][subobjectName][fieldName];
+    let docs;
+    try {
+        docs = await Application.find({ _id: id}).exec();
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+        throw 500;
+    }
+
+    if (docs.length === 1) {
+        if (docs[0].status !== "DUE") {
+            res.sendStatus(401);
+            throw 401;
+        }
+    } else {
+        res.sendStatus(404);
+        throw 404;
+    }
+};
+
 module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, next) => {
     try {
         await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req, res);
@@ -78,9 +105,39 @@ module.exports.CheckPaymentData = (objectName, fieldName) => async (req, res, ne
     next();
 };
 
+module.exports.CheckPaymentDataApplication = (objectName, fieldName) => async (req, res, next) => {
+    if (!req[objectName][fieldName].successURL || !req[objectName][fieldName].cancelURL) {
+        return res.status(400).json({ reason: "Missing success/cancel URL" });
+    }
+
+    if (!req[objectName][fieldName].lang) {
+        return res.status(400).json({ reason: "Missing language" });
+    }
+
+    if (req[objectName][fieldName].lang !== "eng" && req[objectName][fieldName].lang !== "es") {
+        return res.status(400).json({ reason: "Invalid language" });
+    }
+
+    next();
+};
+
 module.exports.CheckConfirmData = (objectName, fieldName) => async (req, res, next) => {
     try {
         await CheckSponsorshipNotPaid(objectName, fieldName, "id")(req, res);
+    } catch (errorCode) {
+        return;
+    }
+
+    if (!req[objectName][fieldName].paymentID || !req[objectName][fieldName].payerID) {
+        return res.status(400).json({ reason: "Missing paypal payment data" });
+    }
+
+    next();
+};
+
+module.exports.CheckConfirmDataApplication = (objectName, fieldName) => async (req, res, next) => {
+    try {
+        await CheckApplicationNotPaid(objectName, fieldName, "id")(req, res);
     } catch (errorCode) {
         return;
     }

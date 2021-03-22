@@ -1,7 +1,11 @@
 const Application = require("../models/ApplicationSchema");
 const Trip = require("../models/TripSchema");
-
+const Validators = require("../middlewares/Validators");
 const { CheckExplorer, CheckManager } = require("../middlewares/Auth");
+const SystemParamsController = require("./SystemParamsController");
+const Payments = require("../Payments");
+const ApplicationSchema = require("../models/ApplicationSchema");
+const Messages = require("../Messages");
 
 /**
  * Get a specific application for a explorer
@@ -257,6 +261,96 @@ const deleteOne = async(req, res) => {
   }
 };
 
+/**
+ * Generate a paypal URL for an application payment
+ * @route POST /applications/payment
+ * @group Applications - Application to a trip
+ * @param {ApplicationPaymentPost.model} paymentData.body.required    - Payment data
+ * @returns {string}                200 - Returns the paypal URL, which can be used to pay
+ * @returns {ValidationError}       400 - Supplied parameters are invalid
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Specified application does not exist
+ * @returns {DatabaseError}         500 - Database or payment error
+ */
+ const createPayment = async (req, res) => {
+  try {
+      const flatRate = await SystemParamsController.getFlatRate();
+
+      const payment = await Payments.createPayment({
+          successURL: req.body.paymentData.successURL,
+          cancelURL: req.body.paymentData.cancelURL,
+          itemList: [{
+              "name": Messages.APPLICATION_PAYMENT_NAME[req.body.paymentData.lang],
+              "sku": "001",
+              "price": flatRate.toString(),
+              "currency": "EUR",
+              "quantity": 1
+          }],
+          amount: {
+              "currency": "EUR",
+              "total": flatRate.toString(),
+          },
+          description: Messages.APPLICATION_PAYMENT_DESC[req.body.paymentData.lang],
+      });
+
+      try {
+          let doc = await ApplicationSchema.findOneAndUpdate({ _id: req.body.paymentData.id, status: "DUE" }, { paymentID: payment.paymentID });
+          if (!doc) {
+              throw "Database error";
+          }
+      } catch (err) {
+          res.status(500).json({ reason: "Database error" });
+      }
+
+      return res.status(200).send(payment.paymentURL);
+  } catch (err) {
+      res.status(500).json({ reason: "Payment error" });
+  }
+};
+
+/**
+* Confirm a paypal payment for an application
+* @route POST /applications/payment-confirm
+* @group Applications - Application to a trip
+* @param {ApplicationPaymentConfirmPost.model} confirmData.body.required    - Payment confirmation data
+* @returns {}                      204 - Payment has been confirmed successfully
+* @returns {ValidationError}       400 - Supplied parameters are invalid
+* @returns {}                      401 - User is not authorized to perform this operation
+* @returns {}                      404 - Specified application does not exist
+* @returns {DatabaseError}         500 - Database error
+*/
+const confirmPayment = async (req, res) => {
+  try {
+
+      const flatRate = await SystemParamsController.getFlatRate();
+
+      await Payments.executePayment({
+          payerID: req.body.confirmData.payerID,
+          paymentID: req.body.confirmData.paymentID,
+          amount: {
+              "currency": "EUR",
+              "total": flatRate.toString(),
+          },
+      });
+
+      try {
+          let doc = await ApplicationSchema.findOneAndUpdate({
+              _id: req.body.confirmData.id,
+              paymentID: req.body.confirmData.paymentID
+          }, { status: "ACCEPTED" });
+          if (doc) {
+              return res.sendStatus(204);
+          } else {
+              throw "Database error";
+          }
+      } catch (err) {
+          res.status(500).json({ reason: "Database error" });
+      }
+  } catch (err) {
+      res.status(500).json({ reason: "Payment error" });
+  }
+};
+
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
   router.get(apiURL + '/:id',
@@ -278,11 +372,21 @@ module.exports.register = (apiPrefix, router) => {
     CheckExplorer,
     explorerCancel);
   router.put(apiURL + '/:id/update',
-    /*CheckManager,*/
+    CheckManager,
     managerUpdate);
   router.delete(apiURL + '/:id',
     CheckExplorer,
     deleteOne)
+  router.post(`${apiURL}/payment`, 
+    /*CheckExplorer,*/
+    Validators.CheckPaymentDataApplication("body", "paymentData"),
+    Validators.Required("body", "paymentData"), 
+    createPayment);
+  router.post(`${apiURL}/payment-confirm`, 
+    /*CheckExplorer,*/
+    Validators.CheckConfirmDataApplication("body", "confirmData"),
+    Validators.Required("body", "confirmData"), 
+    confirmPayment);
 };
 
 /**
@@ -295,7 +399,6 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} explorerID                - Explorer who applies
  */
 
-
 /**
  * @typedef ApplicationPutManager
  * @property {string} status.required         - New status
@@ -307,4 +410,29 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} comments                  - Comments
  * @property {string} tripID.required           - Trip to apply
  * @property {string} explorerID.required       - Explorer who applies
+ */
+
+/**
+* @typedef ApplicationPaymentPost
+* @property {ApplicationPayment.model} paymentData - Application to pay
+*/
+
+/**
+ * @typedef ApplicationPayment
+ * @property {string} id                        - Application ID to pay
+ * @property {string} successURL                - URL to redirect on payment success
+ * @property {string} cancelURL                 - URL to redirect on payment cancellation
+ * @property {string} lang                      - Language for descriptions. Available: eng/es
+ */
+
+/**
+* @typedef ApplicationPaymentConfirmPost
+* @property {ApplicationPaymentConfirm.model} confirmData - Application to update
+*/
+
+/**
+ * @typedef ApplicationPaymentConfirm
+ * @property {string} id                        - Application to pay
+ * @property {string} paymentID                 - Paypal payment ID
+ * @property {string} payerID                   - Paypal payer ID
  */
