@@ -41,7 +41,7 @@ const getMyTrips = async (req, res) => {
 
 /**
  * Get one public trip by id
- * @route GET /trips/display/{id}
+ * @route GET /trips/{id}/display
  * @group Trip - Trip
  * @param {string} id.path.required - Trip identifier
  * @returns {Trip}   200 - Return selected trip
@@ -66,7 +66,7 @@ const getTrip = async (req, res) => {
 
 /**
  * Get trip by id
- * @route GET /trips/display/manager/{id}
+ * @route GET /trips/{id}/display/manager
  * @group Trip - Trip
  * @param {string} id.path.required - Trip identifier
  * @returns {Trip}   200 - Return selected trip
@@ -213,7 +213,7 @@ const deleteTrip = async (req, res) => {
 
 /**
  * Cancel trip as long as is not published, started and free from applications
- * @route PUT /trips/cancel/{id}
+ * @route PUT /trips/{id}/cancel
  * @group Trip - Trip
  * @returns {Trip.model}                200 - Returns the created trip
  * @param {string} id.path.required     - Trip identifier
@@ -247,7 +247,7 @@ const cancelTrip = async (req, res) => {
 
 /**
  * Publish trip
- * @route PUT /trips/publish/{id}
+ * @route PUT /trips/{id}/publish
  * @group Trip - Trip
  * @returns {Trip.model}                200 - Returns the created trip
  * @param {string} id.path.required     - Trip identifier
@@ -310,12 +310,12 @@ module.exports.register = (apiPrefix, router) => {
   );
   router.get(`${apiURL}/manager`, CheckManager, getMyTrips);
   router.get(
-    `${apiURL}/display/:id?`,
+    `${apiURL}/:id?/display`,
     Validators.Required("params", "id"),
     getTrip
   );
   router.get(
-    `${apiURL}/display/manager/:id?`,
+    `${apiURL}/:id?/display/manager`,
     CheckManager,
     Validators.Required("params", "id"),
     getMyTrip
@@ -344,7 +344,7 @@ module.exports.register = (apiPrefix, router) => {
     deleteTrip
   );
   router.put(
-    `${apiURL}/cancel/:id?`,
+    `${apiURL}/:id?/cancel`,
     CheckManager,
     Validators.Required("params", "id"),
     Validators.Required("body", "cancelReason"),
@@ -352,7 +352,7 @@ module.exports.register = (apiPrefix, router) => {
     cancelTrip
   );
   router.put(
-    `${apiURL}/publish/:id?`,
+    `${apiURL}/:id?/publish`,
     CheckManager,
     Validators.Required("params", "id"),
     publishTrip

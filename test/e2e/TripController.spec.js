@@ -197,7 +197,7 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
+          .put(`${testURL}/${response.body._id}/publish`)
           .set(authHeader)
           .expect(200);
       });
@@ -219,7 +219,7 @@ describe("Trip API", () => {
           .expect(200)
           .then((response) => {
             return makeRequest()
-              .get(`${testURL}/display/manager/${response.body._id}`)
+              .get(`${testURL}/${response.body._id}/display/manager`)
               .set(authHeader)
               .expect(404);
           });
@@ -239,12 +239,12 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
+          .put(`${testURL}/${response.body._id}/publish`)
           .set(authHeader)
           .expect(200)
           .then((response) => {
             return makeRequest()
-              .put(`${testURL}/cancel/${response.body._id}`)
+              .put(`${testURL}/${response.body._id}/cancel`)
               .send({ cancelReason: cancelReason })
               .set(authHeader)
               .expect(200)
@@ -276,7 +276,7 @@ describe("Trip API", () => {
     await createPublished(sampleTrips[0]);
 
     return makeRequest()
-      .get(`${testURL}/display/${publishedID}`)
+      .get(`${testURL}/${publishedID}/display`)
       .set(authHeader)
       .expect(200)
       .then((response) => {
@@ -350,7 +350,7 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .get(`${testURL}/display/manager/${response.body._id}`)
+          .get(`${testURL}/${response.body._id}/display/manager`)
           .set(authHeader)
           .expect(200)
           .then((response) => {
@@ -361,7 +361,7 @@ describe("Trip API", () => {
 
   it("Trying to GET non-existent trip", () => {
     return makeRequest()
-      .get(`${testURL}/display/${mongoose.Types.ObjectId().toHexString()}`)
+      .get(`${testURL}/${mongoose.Types.ObjectId().toHexString()}/display`)
       .set(authHeader)
       .expect(404);
   });
@@ -377,7 +377,7 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .get(`${testURL}/display/${response.body._id}`)
+          .get(`${testURL}/${response.body._id}/display`)
           .expect(404);
       });
   });
@@ -425,7 +425,7 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .get(`${testURL}/display/manager/${response.body._id}`)
+          .get(`${testURL}/${response.body._id}/display/manager`)
           .set(authHeaderAux)
           .expect(404);
       });
@@ -523,7 +523,7 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
+          .put(`${testURL}/${response.body._id}/publish`)
           .set(authHeader)
           .expect(200)
           .then((response) => {
@@ -545,7 +545,7 @@ describe("Trip API", () => {
     const doc = await new TripSchema(testTrip).save();
 
     return makeRequest()
-      .put(`${testURL}/publish/${doc._id}`)
+      .put(`${testURL}/${doc._id}/publish`)
       .set(authHeader)
       .expect(400);
   });
@@ -561,13 +561,13 @@ describe("Trip API", () => {
           true
         );
         return makeRequest()
-          .put(`${testURL}/publish/${response.body._id}`)
+          .put(`${testURL}/${response.body._id}/publish`)
           .set(authHeader)
           .expect(200)
           .then((response) => {
             return makeRequest()
-              .put(`${testURL}/cancel/${response.body._id}`)
-              .send({ cancelReason: "" })
+              .put(`${testURL}/${response.body._id}/cancel`)
+              .send({ rejectReason: "" })
               .set(authHeader)
               .expect(400, { reason: "Missing fields" });
           });
@@ -584,7 +584,7 @@ describe("Trip API", () => {
     const doc = await new TripSchema(testTrip).save();
 
     return makeRequest()
-      .put(`${testURL}/cancel/${doc._id}`)
+      .put(`${testURL}/${doc._id}/cancel`)
       .send({ cancelReason: "no reason" })
       .set(authHeader)
       .expect(400, { reason: "Trip can't be cancelled" });
@@ -600,15 +600,15 @@ describe("Trip API", () => {
 
     let testApplication = {
       status: "ACCEPTED",
-      tripId: trip._id,
+      tripID: trip._id,
       comments: ["did", "nothing", "wrong"],
-      explorerId: mongoose.Types.ObjectId().toHexString(),
+      explorerID: mongoose.Types.ObjectId().toHexString(),
     };
 
     const app = await new ApplicationSchema(testApplication).save();
 
     return makeRequest()
-      .put(`${testURL}/cancel/${trip._id}`)
+      .put(`${testURL}/${trip._id}/cancel`)
       .send({ cancelReason: "no reason" })
       .set(authHeader)
       .expect(400, { reason: "Trip has applications associated" });

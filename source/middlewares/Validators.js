@@ -70,6 +70,40 @@ const CheckSponsorshipNotPaid = (
   }
 };
 
+const CheckApplicationNotPaid = (
+  objectName,
+  subobjectName,
+  fieldName
+) => async (req, res) => {
+  if (
+    !req[objectName][subobjectName] ||
+    !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
+    !req[objectName][subobjectName][fieldName]
+  ) {
+    res.status(400).json({ reason: "Missing application ID" });
+    throw 400;
+  }
+
+  const id = req[objectName][subobjectName][fieldName];
+  let docs;
+  try {
+    docs = await Application.find({ _id: id }).exec();
+  } catch (err) {
+    res.status(500).json({ reason: "Database error" });
+    throw 500;
+  }
+
+  if (docs.length === 1) {
+    if (docs[0].status !== "DUE") {
+      res.sendStatus(401);
+      throw 401;
+    }
+  } else {
+    res.sendStatus(404);
+    throw 404;
+  }
+};
+
 module.exports.CheckPaymentData = (objectName, fieldName) => async (
   req,
   res,
@@ -81,6 +115,32 @@ module.exports.CheckPaymentData = (objectName, fieldName) => async (
     return;
   }
 
+  if (
+    !req[objectName][fieldName].successURL ||
+    !req[objectName][fieldName].cancelURL
+  ) {
+    return res.status(400).json({ reason: "Missing success/cancel URL" });
+  }
+
+  if (!req[objectName][fieldName].lang) {
+    return res.status(400).json({ reason: "Missing language" });
+  }
+
+  if (
+    req[objectName][fieldName].lang !== "eng" &&
+    req[objectName][fieldName].lang !== "es"
+  ) {
+    return res.status(400).json({ reason: "Invalid language" });
+  }
+
+  next();
+};
+
+module.exports.CheckPaymentDataApplication = (objectName, fieldName) => async (
+  req,
+  res,
+  next
+) => {
   if (
     !req[objectName][fieldName].successURL ||
     !req[objectName][fieldName].cancelURL
@@ -123,14 +183,48 @@ module.exports.CheckConfirmData = (objectName, fieldName) => async (
   next();
 };
 
-module.exports.TripExists = (objectName, subobjectName, fieldName) => (
+module.exports.CheckConfirmDataApplication = (objectName, fieldName) => async (
   req,
   res,
   next
 ) => {
-  // TODO
-  // fieldName puede ser undefined
+  try {
+    await CheckApplicationNotPaid(objectName, fieldName, "id")(req, res);
+  } catch (errorCode) {
+    return;
+  }
+
+  if (
+    !req[objectName][fieldName].paymentID ||
+    !req[objectName][fieldName].payerID
+  ) {
+    return res.status(400).json({ reason: "Missing paypal payment data" });
+  }
+
   next();
+};
+
+module.exports.TripExists = (
+  objectName,
+  subobjectName,
+  fieldName,
+  optional = false
+) => async (req, res, next) => {
+  let tripID = req[objectName][subobjectName][fieldName];
+  if (optional && !tripID) {
+    return next();
+  }
+
+  try {
+    const docs = await Trip.find({ _id: tripID }).exec();
+    if (docs.length === 1) {
+      next();
+    } else {
+      res.sendStatus(422);
+    }
+  } catch (err) {
+    res.status(500).json({ reason: "Database error" });
+  }
 };
 
 module.exports.CheckDates = (objectName, fieldName) => (req, res, next) => {
@@ -142,6 +236,52 @@ module.exports.CheckDates = (objectName, fieldName) => (req, res, next) => {
     next();
   } else {
     res.status(400).json({ reason: "Date chosen wrongly" });
+  }
+};
+
+module.exports.CheckDatesFinder = () => (req, res, next) => {
+  if (
+    typeof req["body"]["endDate"] === "undefined" &&
+    !isNaN(Date.parse(req["body"]["startDate"]))
+  ) {
+    next();
+  } else if (
+    typeof req["body"]["startDate"] === "undefined" &&
+    !isNaN(Date.parse(req["body"]["endDate"]))
+  ) {
+    next();
+  } else if (
+    typeof req["body"]["startDate"] === "undefined" &&
+    typeof req["body"]["endDate"] === "undefined"
+  ) {
+    next();
+  } else if (
+    !isNaN(Date.parse(req["body"]["endDate"])) &&
+    !isNaN(Date.parse(req["body"]["startDate"]))
+  ) {
+    startDate = new Date(req["body"]["startDate"]);
+    endDate = new Date(req["body"]["endDate"]);
+
+    if (endDate > startDate) {
+      next();
+    } else {
+      res.status(400).json({ reason: "Date chosen wrongly" });
+    }
+  } else {
+    res.status(400).json({ reason: "Incorrect date" });
+  }
+};
+
+module.exports.CheckPricesFinder = () => (req, res, next) => {
+  if (
+    (typeof req.body.minPrice === "number" ||
+      typeof req.body.minPrice === "undefined") &&
+    (typeof req.body.maxPrice === "number" ||
+      typeof req.body.maxPrice === "undefined")
+  ) {
+    next();
+  } else {
+    res.status(400).json({ reason: "Incorrect Prices" });
   }
 };
 
