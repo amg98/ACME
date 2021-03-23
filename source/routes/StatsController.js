@@ -22,6 +22,7 @@ const computeStats = (samples) => {
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {} 404 - No results have been found
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const tripsPerManager = async (req, res) => {
     try {
@@ -61,6 +62,7 @@ const tripsPerManager = async (req, res) => {
  * @returns {Results.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const applicationsPerTrip = async (req, res) => {
     try {
@@ -92,6 +94,7 @@ const applicationsPerTrip = async (req, res) => {
  * @returns {Results.model}   200 - Returns the query
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const pricePerTrips = async (req, res) => {
     try {
@@ -115,6 +118,7 @@ const pricePerTrips = async (req, res) => {
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {} 404 - If there are no applications
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const applicationsRatio = async (req, res) => {
     try {
@@ -152,6 +156,7 @@ const applicationsRatio = async (req, res) => {
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {} 404 - No finders have been found
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const avgPriceFinder = async (req, res) => {
     try {
@@ -172,6 +177,7 @@ const avgPriceFinder = async (req, res) => {
  * @returns {Array<Keyword>}   200 - Returns the top 10 searched keywords
  * @returns {} 401 - User is not authorized to perform this operation
  * @returns {DarabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const topTenKeywords = async (req, res) => {
     try {

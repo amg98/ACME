@@ -10,7 +10,9 @@ const AuthController = require("./routes/AuthController");
 const SponsorshipController = require("./routes/SponsorshipController");
 const SystemParamsController = require("./routes/SystemParamsController");
 const ActorController = require("./routes/ActorController");
+const CubeController = require("./routes/CubeController");
 const ApplicationController = require("./routes/ApplicationController");
+const FinderController = require("./routes/FinderController");
 const TripController = require("./routes/TripController");
 const StatsController = require("./routes/StatsController");
 
@@ -26,15 +28,19 @@ class App {
     this.app.use(express.urlencoded({ extended: false }));
     this.app.use(express.json());
     this.app.use(this.router);
-
+        
     // Route registration
     const apiPrefix = swagger.getBasePath();
     AuthController.register(apiPrefix, this.router);
     SponsorshipController.register(apiPrefix, this.router);
     SystemParamsController.register(apiPrefix, this.router);
     ActorController.register(apiPrefix, this.router);
+    CubeController.register(apiPrefix, this.router);
     TripController.register(apiPrefix, this.router);
     StatsController.register(apiPrefix, this.router);
+    ApplicationController.register(apiPrefix, this.router);
+    FinderController.register(apiPrefix, this.router);
+    //DashboardController.register(apiPrefix, this.router);
 
     this.app.use(App.errorHandler);
     swagger.setupSwagger(this.app, this.port);

@@ -1,45 +1,53 @@
+const { DocumentProvider } = require("mongoose");
 const Finder = require("../models/FinderSchema");
 const Trip = require("../models/TripSchema");
+const systemParamsController = require("./SystemParamsController");
+const Validators = require("../middlewares/Validators");
+const { CheckActor } = require("../middlewares/Auth");
 
 /**
- * Get a specific finder for an actor
- * @route GET /finders
+ * Get a specific finder
+ * @route GET /finders/{id}
  * @group Finder - Find trips
- * @param {string} id.path              - Actor identifier
+ * @param {string} id.path.required             - Finder identifier
  * @returns {Finder}                200 - Returns the requested Finder
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
-const getOne = (req, res) => {
+const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
-    // Necesita explorerId autenticado
-    Finder.findById(req.params.finderId, function (err, finder) {
-        if (err) {
-            res.send(err);
+    const doc = await Finder.findById(req.params.id);
+    if(doc) {
+        return res.status(200).send(doc);
+    } else {
+        return res.status(404).send("Finder not found");
+    }
+};
+
+/**
+ * Get a specific finder
+ * @route GET /finders/actors/{id}
+ * @group Finder - Find trips
+ * @param {string} id.path.required             - Actor identifier
+ * @returns {Finder}                200 - Returns the requested Finder
+ * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Finder not found
+ * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
+ */
+ const getOneByActor = async(req, res) => {
+    console.log(Date() + "-GET /finders/actor");
+    Finder.findOne({actorID: req.params.id }, function(err, obj) { 
+        if(err) {
+            return res.status(401).json({err:err});
         }
-        else {
-            if (finder.trips.length === 0) {
-                //Resultados expirados
-                let trips = Trip.find({
-                    ticker: '/' + req.body.keyword + '/',
-                    title: '/' + req.body.keyword + '/',
-                    startDate: {
-                        $gte: new Date(req.body.dateInit),
-                    },
-                    endDate: {
-                        $lt: new Date(req.body.dateEnd)
-                    },
-                    price: {
-                        $gte: req.body.minPrice,
-                        $lt: req.body.maxPrice
-                    }
-                });
-                finder.trips = trips;
-                res.json(finder);
-            } else {
-                res.json(finder);
-            }
-        }
+        var finder = obj;
+        if(finder)
+            return res.status(200).json(finder);
+        else
+            return res.status(404).send("Finder not found");
     });
 };
 
@@ -47,107 +55,224 @@ const getOne = (req, res) => {
  * Create a new finder
  * @route POST /finders
  * @group Finder - Find trips
- * @param {FinderPost.model} finder.body.required  - New finder
+ * @param {Finder.model} finder.body.required  - New finder
  * @returns {string}                200 - Returns the finder identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
-const createOne = (req, res) => {
-    // Necesita explorerId autenticado
+const createOne = async (req, res) => {
     console.log(Date() + "-POST /finder");
-    let trips = Trip.find({
-        ticker: '/' + req.body.keyword + '/',
-        title: '/' + req.body.keyword + '/',
-        startDate: {
-            $gte: new Date(req.body.dateInit),
-        },
-        endDate: {
-            $lt: new Date(req.body.dateEnd)
-        },
-        price: {
-            $gte: req.body.minPrice,
-            $lt: req.body.maxPrice
-        }
-    })
+
+    let sD = Date.parse(req.body.startDate)
+    let eD = Date.parse(req.body.endDate)
+    const maxResults = await systemParamsController.getFinderMaxResults();
+
+    if(isNaN(sD)){
+        sD = undefined
+    }else{
+        sD = new Date(sD)
+    }
+    if(isNaN(eD)){
+        eD = undefined
+    }else{
+        eD = new Date(eD)
+    }
+
+    let filters = {
+        price: {$gte: req.body.minPrice, $lt: req.body.maxPrice},
+        startDate: {$gte: sD},
+        endDate: {$lt: eD},
+    }
+
+    if(req.body.minPrice === undefined && req.body.maxPrice === undefined){
+        delete filters.price
+    }else if(req.body.minPrice === undefined && req.body.maxPrice !== undefined){
+        delete filters.price.$gte
+    }else if(req.body.minPrice !== undefined && req.body.maxPrice === undefined){
+        delete filters.price.$lt
+    }
+    if(filters.startDate === undefined){
+        delete filters.startDate
+    }
+    if(filters.endDate === undefined){
+        delete filters.endDate
+    }
+
+    const keywordRegex = new RegExp(req.body.keyword, 'i')
+
+    let trips = await Trip.find(
+        { 
+            $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+            $and: [filters]
+    }).limit(maxResults)
+
     const finder = {
-        ticker: req.body.ticker,
+        keyword: req.body.keyword,
         minPrice: req.body.minPrice,
         maxPrice: req.body.maxPrice,
-        dateInit: req.body.dateInit,
-        dateEnd: req.body.dateEnd,
+        startDate: sD,
+        endDate: eD,
+        actorID: req.body.actorID,
         trips: trips
     }
-    const doc = new Finder(finder).save();
-    return res.status(201).send(doc);
+
+    try {
+        const doc = await new Finder(finder).save();
+        res.status(200).send(doc);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
  * Update an existing finder for a specific actor
- * @route PUT /finders
+ * @route PUT /finders/{id}
  * @group Finder - Find trips
+ * @param {string} id.path.required               - Finder identifier
  * @param {FinderPut.model} finder.body.required  - Finder updates
  * @returns {Finder}                200 - Returns the current state for this finder
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
-const editOne = (req, res) => {
-    // Necesita explorerId autenticado, _id
-    Finder.findOneAndUpdate({ _id: req.body.finder._id }, req.body.finder)
-        .then(doc => {
-            if (doc) {
-                return Finder.findById(doc._id);
-            } else {
-                res.sendStatus(401);
-            }
-        })
+const editOne = async(req, res) => {
+    let doc = await Finder.findById(req.params.id);
+    if (doc) {
+        let sD = Date.parse(req.body.startDate)
+        let eD = Date.parse(req.body.endDate)
+        const maxResults = await systemParamsController.getFinderMaxResults();
+    
+        if(isNaN(sD)){
+            sD = undefined
+        }else{
+            sD = new Date(sD)
+        }
+        if(isNaN(eD)){
+            eD = undefined
+        }else{
+            eD = new Date(eD)
+        }
+    
+        let filters = {
+            price: {$gte: req.body.minPrice, $lt: req.body.maxPrice},
+            startDate: {$gte: sD},
+            endDate: {$lt: eD},
+        }
+    
+        if(req.body.minPrice === undefined && req.body.maxPrice === undefined){
+            delete filters.price
+        }else if(req.body.minPrice === undefined && req.body.maxPrice !== undefined){
+            delete filters.price.$gte
+        }else if(req.body.minPrice !== undefined && req.body.maxPrice === undefined){
+            delete filters.price.$lt
+        }
+        if(filters.startDate === undefined){
+            delete filters.startDate
+        }
+        if(filters.startDate === undefined){
+            delete filters.endDate
+        }
+    
+        const keywordRegex = new RegExp(req.body.keyword, 'i')
+    
+        let trips = await Trip.find(
+            { 
+                $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+                $and: [filters]
+        }).limit(maxResults)
+
+        const finder = {
+            _id: req.params.id,
+            keyword: req.body.keyword,
+            minPrice: req.body.minPrice,
+            maxPrice: req.body.maxPrice,
+            startDate: sD,
+            endDate: eD,
+            actorID: doc.actorID,
+            trips: trips
+        }
+
+        doc = await Finder.findOneAndDelete({ _id: req.params.id })
+        .catch(err => res.status(500).json({ reason: "Database error" }));
+
+        doc = await new Finder(finder).save()        
         .then(doc => res.status(200).json(doc))
         .catch(err => res.status(500).json({ reason: "Database error" }));
+    } else {
+        return res.status(404).send("Finder not found");
+    }
 };
 
 /**
  * Delete an existing finder for a specific actor
- * @route DELETE /finders
+ * @route DELETE /finders/{id}
  * @group Finder - Find trips
- * @param {string} id.path.required     - Finder identifier
+ * @param {string} finderID.path.required     - Finder identifier
  * @returns {Finder}                200 - Returns the deleted finder
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
-const deleteOne = (req, res) => {
+const deleteOne = async (req, res) => {
     // Necesita actorID autenticado, _id
-    Finder.deleteOne({ _id: req.params.id }, function (err) {
-        if (err) return handleError(err);
-        res.status(200)
-    });
+    try {
+        const doc = await Finder.findOneAndDelete({ _id: req.params.finderID });
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.status(404).send("Finder not found");
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/finders`;
-    router.get(apiURL + '/:finderId', getOne);
-    router.post(apiURL, createOne);
-    router.put(apiURL + '/:finderId', editOne);
-    router.delete(apiURL + '/:finderId', deleteOne)
+    router.get(apiURL + '/:id', 
+        CheckActor,
+        getOne);
+    router.get(apiURL + '/actors/:id',
+        CheckActor,
+        getOneByActor);
+    router.post(apiURL,
+        CheckActor,
+        Validators.CheckPricesFinder(),
+        Validators.CheckDatesFinder(),
+        createOne);
+    router.put(apiURL + '/:id',
+        CheckActor,
+        Validators.CheckPricesFinder(),
+        Validators.CheckDatesFinder(),
+        editOne);
+    router.delete(apiURL + '/:id',
+        CheckActor,
+        Validators.CheckPricesFinder(),
+        Validators.CheckDatesFinder(),
+        deleteOne)
 };
 
 /**
- * @typedef FinderPost
- * @property {Finder.model} finder - New Finder
+ * @typedef Finder
+ * @property {string} keyword          - Keyword for search
+ * @property {number} minPrice         - Min Trip Price
+ * @property {number} maxPrice         - Max Trip Price
+ * @property {string} startDate         - Date Init
+ * @property {string} endDate          - End Date
+ * @property {string} actorID          - Actor ID
  */
 
 /**
  * @typedef FinderPut
- * @property {Finder.model} finder - Finder to update
- */
-
-/**
- * @typedef Finder
- * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
- * @property {string} keyword.required          - Keyword for search
- * @property {string} minPrice.required         - Min Trip Price
- * @property {string} maxPrice.required         - Max Trip Price
- * @property {string} dateInit.required         - Date Init
- * @property {string} dateEnd.required          - End Date
+ * @property {string} keyword            - Keyword for search
+ * @property {number} minPrice           - Min Trip Price
+ * @property {number} maxPrice           - Max Trip Price
+ * @property {string} startDate           - Date Init
+ * @property {string} endDate            - End Date
  */
