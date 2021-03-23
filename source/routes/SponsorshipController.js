@@ -14,6 +14,7 @@ const Messages = require("../Messages");
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Sponsorship not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 
 /**
@@ -23,6 +24,7 @@ const Messages = require("../Messages");
 * @returns {Array.<Sponsorship>}   200 - Returns the requested sponsorship(s)
 * @returns {}                      401 - User is not authorized to perform this operation
 * @returns {DatabaseError}         500 - Database error
+* @security bearerAuth
 */
 const getSponsorship = async (req, res) => {
     try {
@@ -80,6 +82,7 @@ const getRandomSponsorship = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      422 - If trip does not exist
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const createSponsorship = async (req, res) => {
     delete req.body.sponsorship._id;
@@ -105,6 +108,7 @@ const createSponsorship = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      422 - If trip does not exist
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const updateSponsorship = async (req, res) => {
     delete req.body.sponsorship._id;
@@ -134,6 +138,7 @@ const updateSponsorship = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const deleteSponsorship = async (req, res) => {
     try {
@@ -158,6 +163,7 @@ const deleteSponsorship = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Specified sponsorship does not exist
  * @returns {DatabaseError}         500 - Database or payment error
+ * @security bearerAuth
  */
 const createPayment = async (req, res) => {
     try {
@@ -205,6 +211,7 @@ const createPayment = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Specified sponsorship does not exist
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const confirmPayment = async (req, res) => {
     try {

@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 const { CheckActor, CheckAdmin } = require("../middlewares/Auth");
 /**
  * Get an actor
- * @route GET /actors/{actorId}
+ * @route GET /actors/{id}
  * @group Actors - System users
  * @param {string} id.path              - Actor identifier
  * @returns {Actor.model}           200 - Returns the requested actor
@@ -38,9 +38,13 @@ const getActor = (req, res) => {
 const createActor = async (req, res) => {
   delete req.body.actor._id;
   delete req.body.actor.isBanned;
-  if(req.body.actor.roles.includes('ADMINISTRATOR')){
-    return res.status(422).json({ err: "Can't create an admin user" });
+
+  if(process.env.NODE_ENV != "development") {
+    if(req.body.actor.roles.includes('ADMINISTRATOR')){
+      return res.status(422).json({ err: "Can't create an admin user" });
+    }
   }
+
 
   //Si hay alguien identificado, debe ser un 'ADMINISTRATOR'
   const headerToken = req.headers.authorization;
@@ -99,6 +103,7 @@ const createActor = async (req, res) => {
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           403 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
+ * @security bearerAuth
  */
 const updateActor = async (req, res) => {
     try {
@@ -129,12 +134,13 @@ const updateActor = async (req, res) => {
 
 /**
  * Ban/Unban an actor
- * @route PUT /actors/{actorId}/ban
+ * @route PUT /actors/{id}/ban
  * @group Actors - System users
  * @param {ActorBan.model} isBanned.body.required  - New ban status
  * @returns {Actor}                      200 - Returns the current state for this actor
  * @returns {}                           403 - User is not authorized to perform this operation
  * @returns {DatabaseError}              500 - Database error
+ * @security bearerAuth
  */
 const banActor = async (req, res) => {
     try {
