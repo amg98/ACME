@@ -8,7 +8,7 @@ const RandExp = require("randexp");
  * @group Trip - Trip
  * @returns {Array.<Trip>}   200 - Returns published Trips
  * @returns {} 401 - User is not authorized to perform this operation
- * @returns {DarabaseError} 500 - Database error
+ * @returns {DatabaseError} 500 - Database error
  */
 const getTrips = async (req, res) => {
   try {
@@ -21,12 +21,13 @@ const getTrips = async (req, res) => {
 };
 
 /**
- * Get list of looged manager trips
+ * Get list of logged manager trips
  * @route GET /trips/manager
  * @group Trip - Trip
  * @returns {Array.<Trip>}   200 - Returns published Trips
  * @returns {} 401 - User is not authorized to perform this operation
- * @returns {DarabaseError} 500 - Database error
+ * @returns {DatabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const getMyTrips = async (req, res) => {
   try {
@@ -45,7 +46,7 @@ const getMyTrips = async (req, res) => {
  * @param {string} id.path.required - Trip identifier
  * @returns {Trip}   200 - Return selected trip
  * @returns {} 401 - User is not authorized to perform this operation
- * @returns {DarabaseError} 500 - Database error
+ * @returns {DatabaseError} 500 - Database error
  */
 const getTrip = async (req, res) => {
   try {
@@ -70,7 +71,8 @@ const getTrip = async (req, res) => {
  * @param {string} id.path.required - Trip identifier
  * @returns {Trip}   200 - Return selected trip
  * @returns {} 401 - User is not authorized to perform this operation
- * @returns {DarabaseError} 500 - Database error
+ * @returns {DatabaseError} 500 - Database error
+ * @security bearerAuth
  */
 const getMyTrip = async (req, res) => {
   try {
@@ -95,7 +97,7 @@ const getMyTrip = async (req, res) => {
  * @param {string} keyword.path.required - Keyword contained wether in ticker, title or desc.
  * @returns {Array.<Trip>}   200 - Returns Trips matching parameters
  * @returns {} 401 - User is not authorized to perform this operation
- * @returns {DarabaseError} 500 - Database error
+ * @returns {DatabaseError} 500 - Database error
  */
 const searchTrips = async (req, res) => {
   let re = new RegExp(`.*${req.params.keyword}.*`, "i");
@@ -121,6 +123,7 @@ const searchTrips = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const createTrip = async (req, res) => {
   delete req.body.trip._id;
@@ -149,6 +152,7 @@ const createTrip = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const updateTrip = async (req, res) => {
   delete req.body.trip.isPublished;
@@ -189,6 +193,7 @@ const updateTrip = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const deleteTrip = async (req, res) => {
   try {
@@ -216,6 +221,7 @@ const deleteTrip = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const cancelTrip = async (req, res) => {
   try {
@@ -249,6 +255,7 @@ const cancelTrip = async (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const publishTrip = async (req, res) => {
   try {

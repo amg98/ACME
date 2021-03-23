@@ -12,6 +12,7 @@ const { CheckAdmin } = require("../middlewares/Auth");
  * @returns {string}                                  200 - Returns the computed operation
  * @returns {}                                        401 - User is not authorized to perform this operation
  * @returns {DatabaseError}                           500 - Database error
+ * @security bearerAuth
  */
  const computeCubes = async (req, res) => {
   // Hacerlo con agreggations
@@ -27,6 +28,7 @@ const { CheckAdmin } = require("../middlewares/Auth");
  * @returns {float}                           200 - Returns the amount for the requested cube
  * @returns {Error}                           400 - Invalid month format
  * @returns {DatabaseError}                   404 - Cube not found
+ * @security bearerAuth
  */
 const getMonthCube = (req, res) => {
 
@@ -74,6 +76,7 @@ const getMonthCube = (req, res) => {
  * @param {integer} year.path.required            - Years to query (Y01-Y03)
  * @returns {float}                           200 - Returns the amount for the requested cube
  * @returns {DatabaseError}                   404 - Cube not found
+ * @security bearerAuth
  */
 const getYearCube = (req, res) => {
 
@@ -123,6 +126,7 @@ const getYearCube = (req, res) => {
  * @returns {Array.<Actor>}                   200 - Returns the explorers that satisfy the condition
  * @returns {Error}                           400 - Invalid format query
  * @returns {DatabaseError}                   404 - Explorer not found
+ * @security bearerAuth
  */
 const getExplorersByConditionCube = async (req, res) => {
   const period = req.params.period;

@@ -14,6 +14,7 @@ const { CheckActor } = require("../middlewares/Auth");
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
@@ -34,6 +35,7 @@ const getOne = async(req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
  const getOneByActor = async(req, res) => {
     console.log(Date() + "-GET /finders/actor");
@@ -58,6 +60,7 @@ const getOne = async(req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const createOne = async (req, res) => {
     console.log(Date() + "-POST /finder");
@@ -134,6 +137,7 @@ const createOne = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const editOne = async(req, res) => {
     let doc = await Finder.findById(req.params.id);
@@ -213,6 +217,7 @@ const editOne = async(req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Finder not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const deleteOne = async (req, res) => {
     // Necesita actorID autenticado, _id

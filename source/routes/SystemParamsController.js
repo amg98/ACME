@@ -60,6 +60,7 @@ module.exports.register = (apiPrefix, router) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 
 /**
@@ -71,6 +72,7 @@ module.exports.register = (apiPrefix, router) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 
 /**
@@ -82,4 +84,5 @@ module.exports.register = (apiPrefix, router) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */

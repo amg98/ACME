@@ -16,6 +16,7 @@ const Messages = require("../Messages");
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const getOne = async(req, res) => {
   console.log(Date() + "-GET /applications");
@@ -36,6 +37,7 @@ const getOne = async(req, res) => {
  * @returns {Array.<Application>}         200 - Returns the requested application
  * @returns {}                            401 - User is not authorized to perform this operation
  * @returns {DatabaseError}               500 - Database error
+ * @security bearerAuth
  */
 const getAllByTripId = (req, res) => {
   console.log(Date() + "-GET /applications/trips/id");
@@ -61,6 +63,7 @@ const getAllByTripId = (req, res) => {
  * @returns {Array.<Application>}       200 - Returns the requested application
  * @returns {}                          401 - User is not authorized to perform this operation
  * @returns {DatabaseError}             500 - Database error
+ * @security bearerAuth
  */
 const getAllByExplorerId = (req, res) => {
   console.log(Date() + "-GET /applications/explorers/id");
@@ -93,6 +96,7 @@ const getAllByExplorerId = (req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const createOne = async (req, res) => {
   console.log(Date() + "-POST /applications");
@@ -127,6 +131,7 @@ const createOne = async (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const explorerCancel = async(req, res) => {
   console.log(Date() + "-PUT /applications - Explorer CANCEL");
@@ -165,6 +170,7 @@ const explorerCancel = async(req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const editOne = (req, res) => {
   console.log(Date() + "-PUT /applications");
@@ -191,6 +197,7 @@ const editOne = (req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Application not found
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const managerUpdate = async(req, res) => {
   console.log(Date() + "-PUT /applications - Manager update");
@@ -247,6 +254,7 @@ const managerUpdate = async(req, res) => {
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {DatabaseError}         500 - Database error
+ * @security bearerAuth
  */
 const deleteOne = async(req, res) => {
   try {
@@ -271,6 +279,7 @@ const deleteOne = async(req, res) => {
  * @returns {}                      401 - User is not authorized to perform this operation
  * @returns {}                      404 - Specified application does not exist
  * @returns {DatabaseError}         500 - Database or payment error
+ * @security bearerAuth
  */
  const createPayment = async (req, res) => {
   try {
@@ -318,6 +327,7 @@ const deleteOne = async(req, res) => {
 * @returns {}                      401 - User is not authorized to perform this operation
 * @returns {}                      404 - Specified application does not exist
 * @returns {DatabaseError}         500 - Database error
+* @security bearerAuth
 */
 const confirmPayment = async (req, res) => {
   try {
