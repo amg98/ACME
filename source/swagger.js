@@ -24,7 +24,7 @@ module.exports.setupSwagger = (app, port) => {
                     type: 'apiKey',
                     in: 'header',
                     name: 'Authorization',
-                    description: "Introducir con formato 'Bearer <idToken>",
+                    description: "Introducir con formato 'Bearer &lt;idToken>'",
                 }
             }
             
