@@ -18,7 +18,16 @@ module.exports.setupSwagger = (app, port) => {
             produces: [
                 "application/json",
             ],
-            schemes: [process.env.SWAGGER_SCHEMA]
+            schemes: [process.env.SWAGGER_SCHEMA],
+            securityDefinitions: {
+                bearerAuth: {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: 'Authorization',
+                    description: "Introducir con formato 'Bearer <idToken>",
+                }
+            }
+            
         },
         basedir: __dirname,
         files: ['./routes/**/*.js']
