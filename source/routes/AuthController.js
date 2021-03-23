@@ -5,6 +5,7 @@ var getIdToken = require('../firebase/getIdToken')
 /**
  * @route POST /auth/login
  * @group Authentication - login/logout
+ * @param {Login.model} login.body.required  - Email and paswword
  * @returns {object}        200 - Logged user info and token
  * @returns {Error}         400 - Error while logging user
  * @returns {DatabaseError} 500 - Database error
@@ -45,7 +46,7 @@ var getIdToken = require('../firebase/getIdToken')
 /**
  * @route GET /auth/custom/{customToken}
  * @group Authentication - login/logout
- * @param {string} customToken.query.required - Firebase custom token
+ * @param {string} customToken.path.required - Firebase custom token
  * @returns {object} 200 - Firebase Id token
  * @returns {Error}  401 - Error while checking token
  */
@@ -69,7 +70,7 @@ var getIdToken = require('../firebase/getIdToken')
 /**
  * @route GET /auth/id/{idToken}
  * @group Authentication - login/logout
- * @param {string} idToken.query.required - Firebase Id token
+ * @param {string} idToken.path.required - Firebase Id token
  * @returns {object} 200 - Authenticated user
  * @returns {Error}  401 - Error while checking token
  */
@@ -106,3 +107,11 @@ module.exports.register = (apiPrefix, router) => {
     router.get(apiURL+'/id/:idToken', getActorByIdToken);
     router.get(apiURL+'/custom/:customToken', getIdTokenByCustomToken);
   };
+
+
+
+ /**
+ * @typedef Login
+ * @property {string} email.required
+ * @property {string} password.required
+ */
