@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 const { CheckActor, CheckAdmin } = require("../middlewares/Auth");
 /**
  * Get an actor
- * @route GET /actors/{actorId}
+ * @route GET /actors/{id}
  * @group Actors - System users
  * @param {string} id.path              - Actor identifier
  * @returns {Actor.model}           200 - Returns the requested actor
@@ -134,7 +134,7 @@ const updateActor = async (req, res) => {
 
 /**
  * Ban/Unban an actor
- * @route PUT /actors/{actorId}/ban
+ * @route PUT /actors/{id}/ban
  * @group Actors - System users
  * @param {ActorBan.model} isBanned.body.required  - New ban status
  * @returns {Actor}                      200 - Returns the current state for this actor
