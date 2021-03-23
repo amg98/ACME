@@ -130,9 +130,8 @@ const createTrip = async (req, res) => {
   delete req.body.trip.cancelReason;
   req.body.trip.managerID = req.managerID;
 
-  req.body.trip.ticker = generateTicker();
-
   try {
+    req.body.trip.ticker = await generateTicker(10);
     const doc = await new Trip(req.body.trip).save();
     res.status(200).send(doc);
   } catch (err) {
@@ -271,7 +270,9 @@ const publishTrip = async (req, res) => {
   }
 };
 
-function generateTicker() {
+async function generateTicker(acc) {
+  if (acc == 0) throw "Maximum tries creating new ticker";
+
   var today = new Date();
   today = today.toISOString().substring(0, 10);
 
@@ -280,14 +281,14 @@ function generateTicker() {
 
   ticker = ticker_date + "-" + letters;
 
-  //TODO
-  // Trip.exists({ ticker: ticker }, function (err) {
-  //   if (err) {
-  //     next();
-  //   } else {
-  //     ticker = generateTicker();
-  //   }
-  // });
+  Trip.exists({ ticker: ticker }, function (err) {
+    if (err) {
+      throw err;
+    } else {
+      acc = acc - 1;
+      ticker = generateTicker(acc);
+    }
+  });
 
   return ticker;
 }

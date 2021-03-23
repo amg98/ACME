@@ -156,9 +156,8 @@ module.exports.CheckNotPublished = () => (req, res, next) => {
 };
 
 module.exports.CheckNoApplicationsAttached = () => (req, res, next) => {
-  //TODO
   Application.find(
-    { tripId: req.params.id, status: "ACCEPTED" },
+    { tripID: req.params.id, status: "ACCEPTED" },
     function (err, docs) {
       if (docs.length > 0) {
         res.status(400).json({ reason: "Trip has applications associated" });
