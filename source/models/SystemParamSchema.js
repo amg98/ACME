@@ -6,9 +6,4 @@ const SystemParamSchema = new Schema({
     value: Schema.Types.Mixed,
 });
 
-SystemParamSchema.pre("save", (next) => {
-    this._id = this._id.toString();
-    next();
-});
-
 module.exports = mongoose.model("systemparams", SystemParamSchema);

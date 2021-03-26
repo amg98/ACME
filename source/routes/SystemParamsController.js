@@ -5,7 +5,7 @@ const SystemParamsSchema = require("../models/SystemParamSchema");
 const setSystemParam = (paramName) => async (req, res) => {
     try {
         let doc = await SystemParamsSchema.findOneAndUpdate({ _id: paramName }, { value: req.query.value });
-        if(!doc) return res.sendStatus(401);
+        if (!doc) return res.sendStatus(401);
         doc = await SystemParamsSchema.findById(doc._id);
         res.status(200).send(doc.value.toString());
     } catch (err) {
@@ -15,10 +15,10 @@ const setSystemParam = (paramName) => async (req, res) => {
 
 const getSystemParam = (paramName) => async () => {
     const doc = await SystemParamsSchema.findById(paramName);
-    if(doc) {
+    if (doc) {
         return doc.value;
     } else {
-        throw "Database error";
+        throw `Error reading system param: ${paramName}`;
     }
 };
 
@@ -41,13 +41,24 @@ module.exports.getFlatRate = getSystemParam(SystemParams.FlatRate.name);
 module.exports.getFinderMaxResults = getSystemParam(SystemParams.FinderMaxResults.name);
 module.exports.getFinderResultsTTL = getSystemParam(SystemParams.FinderResultsTTL.name);
 
+module.exports.initialize = async () => {
+    if (process.env.NODE_ENV !== "test") {
+        try {
+            await new SystemParamsSchema({ _id: SystemParams.FlatRate.name, value: 80 }).save();
+            await new SystemParamsSchema({ _id: SystemParams.FinderMaxResults.name, value: 10 }).save();
+            await new SystemParamsSchema({ _id: SystemParams.FinderResultsTTL.name, value: 1 }).save();
+            console.log("[INFO] Created system params with default values");
+        } catch (err) { }
+    }
+};
+
 module.exports.register = (apiPrefix, router) => {
     Object.entries(SystemParams).forEach(([key, systemParam]) => {
-        router.put(`${apiPrefix}/system-params/${systemParam.name}`, 
-                    CheckAdmin, 
-                    Validators.Required("query", "value"), 
-                    ...systemParam.validators, 
-                    setSystemParam(systemParam.name));
+        router.put(`${apiPrefix}/system-params/${systemParam.name}`,
+            CheckAdmin,
+            Validators.Required("query", "value"),
+            ...systemParam.validators,
+            setSystemParam(systemParam.name));
     });
 };
 
