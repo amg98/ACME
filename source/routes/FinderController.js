@@ -68,6 +68,7 @@ const createOne = async (req, res) => {
     let sD = Date.parse(req.body.startDate)
     let eD = Date.parse(req.body.endDate)
     const maxResults = await systemParamsController.getFinderMaxResults();
+    const tripsTTL = await systemParamsController.getFinderResultsTTL();
 
     if(isNaN(sD)){
         sD = undefined
@@ -117,6 +118,7 @@ const createOne = async (req, res) => {
         actorID: req.body.actorID,
         trips: trips
     }
+    finder.trips.expireAfterSeconds = tripsTTL;
 
     try {
         const doc = await new Finder(finder).save();
@@ -145,7 +147,8 @@ const editOne = async(req, res) => {
         let sD = Date.parse(req.body.startDate)
         let eD = Date.parse(req.body.endDate)
         const maxResults = await systemParamsController.getFinderMaxResults();
-    
+        const tripsTTL = await systemParamsController.getFinderResultsTTL();
+
         if(isNaN(sD)){
             sD = undefined
         }else{
@@ -195,6 +198,7 @@ const editOne = async(req, res) => {
             actorID: doc.actorID,
             trips: trips
         }
+        finder.trips.expireAfterSeconds = tripsTTL;
 
         doc = await Finder.findOneAndDelete({ _id: req.params.id })
         .catch(err => res.status(500).json({ reason: "Database error" }));

@@ -12,7 +12,7 @@ const FinderSchema = new Schema({
     trips: {
         type: [TripSchema],
         default: undefined,
-        //expires: systemParamsController.getFinderResultsTTL()     // HACER DE OTRA FORMA
+        expireAfterSeconds: Number,
     },
     actorID: Schema.Types.ObjectId
 });
