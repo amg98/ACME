@@ -12,13 +12,13 @@ const { CheckActor, CheckAdmin } = require("../middlewares/Auth");
  * @returns {DatabaseError}         404 - User not found
  */
 const getActor = (req, res) => {
-    Actor.findById(req.params.actorId, function(err, actor) {
+    Actor.findById(req.params.id, function(err, actor) {
         if (err){
-          return res.status(404).json({"error":"Actor not found", code:err});
+          return res.status(404).json({reason:"Actor not found", code:err});
         }
         else {
           if(!actor){
-            return res.status(404).json({"error":"Actor not found"});
+            return res.status(404).json({reason:"Actor not found"});
           }
           res.status(200).json(actor);
         }
@@ -41,10 +41,9 @@ const createActor = async (req, res) => {
 
   if(process.env.NODE_ENV != "development") {
     if(req.body.actor.roles.includes('ADMINISTRATOR')){
-      return res.status(422).json({ err: "Can't create an admin user" });
+      return res.status(422).json({ reason: "Can't create an admin user" });
     }
   }
-
 
   //Si hay alguien identificado, debe ser un 'ADMINISTRATOR'
   const headerToken = req.headers.authorization;
@@ -52,12 +51,13 @@ const createActor = async (req, res) => {
   if (!headerToken) {
     try {
       if(req.body.actor.roles.includes('MANAGER')) {
-        return res.status(403).json({err: "Only administrators can create managers"});
+        return res.status(403).json({reason: "Only administrators can create managers"});
       }
+
       const actor = await new Actor(req.body.actor).save();
-      res.status(200).json({actor: actor});
+      res.status(200).json(actor);
     } catch (err) {
-        res.status(500).json({ reason: "Database error", err: err });
+        res.status(500).json({ reason: "Database error", reason: err });
     }
   } else {
       if (headerToken && headerToken.split(" ")[0] !== "Bearer") {
@@ -71,21 +71,22 @@ const createActor = async (req, res) => {
 
           Actor.findOne({email: uid}, function(err, obj) { 
               var loggedActor = obj;
+
               if(!loggedActor.roles.includes('ADMINISTRATOR')){
-                return res.status(403).json({err: "You must be an administrator"});
+                return res.status(403).json({reason: "You must be an administrator"});
               }
 
               if(!req.body.actor.roles.includes('MANAGER')) {
-                return res.status(422).json({err: "New user has to be a Manager"});
+                return res.status(422).json({reason: "New user has to be a Manager"});
               }
 
               const actor = new Actor(req.body.actor);
-              actor.save(function(err, doc){ 
+              actor.save(function(err, actor){ 
                 if(err){ 
                   res.status(500).json({ reason: "Database error", err: err }) 
                 } 
                 else { 
-                  res.status(200).json(doc);
+                  res.status(200).json(actor);
                 } 
               });
           })
@@ -110,7 +111,7 @@ const updateActor = async (req, res) => {
       let { name, surname, email, phoneNumber, address, password } = req.body.actor;
 
       if(req.body.actor._id != req.actorID) {
-        return res.status(403).json({"error": "You are not allowed to edit this profile"})
+        return res.status(403).json({reason: "You are not allowed to edit this profile"})
       }
       let actor = await Actor.findOne({_id: req.actorID});
   
@@ -144,13 +145,7 @@ const updateActor = async (req, res) => {
  */
 const banActor = async (req, res) => {
     try {
-      const actor = await Actor.findOne( {_id: req.params.actorId} );
-      
-      let loggedActor = await Actor.findOne({_id: req.adminID});
-
-      if(!loggedActor.roles.includes("ADMINISTRATOR")){
-        return res.status(403).json({ error: "You are not allowed to do this operation" });
-      }
+      const actor = await Actor.findOne( {_id: req.params.id} );
 
       actor.isBanned = req.body.isBanned;
       const doc = await actor.save();
@@ -170,10 +165,10 @@ const banActor = async (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/actors`;
-  router.get(apiURL+'/:actorId', getActor);
+  router.get(apiURL+'/:id', Validators.Required("params", "id"), getActor);
   router.post(apiURL, Validators.Required("body", "actor"), createActor); 
-  router.put(apiURL, Validators.Required("body", "actor"), CheckActor, updateActor);
-  router.put(apiURL+'/:actorId/ban', CheckAdmin, banActor);
+  router.put(apiURL, CheckActor, Validators.Required("body", "actor"), updateActor);
+  router.put(apiURL+'/:id/ban', Validators.Required("params", "id"), CheckAdmin, banActor);
 };
 
 /**
