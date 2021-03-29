@@ -61,3 +61,40 @@ module.exports.createUserAndLogin = async (
     userID,
   };
 };
+
+module.exports.createSampleUserAndLogin = async (
+  user
+) => {
+  const testUserPasswordHashed = Bcrypt.hashSync(user["password"], 10);
+  
+  await ActorSchema.insertMany([
+    {
+      name: user["name"],
+      surname: user["surname"],
+      email: user["email"],
+      phoneNumber: user["phoneNumber"],
+      address: user["address"],
+      isbanned: user["isBanned"],
+      password: testUserPasswordHashed,
+      roles: user["role"]
+    },
+  ]);
+
+  let response = await request(`http://localhost:${process.env.PORT}`)
+    .post("/api/v1/auth/login")
+    .send({
+      email: user["email"],
+      password: user["password"],
+    });
+
+  const userID = response.body.actor._id;
+
+  response = await request(`http://localhost:${process.env.PORT}`).get(
+    `/api/v1/auth/custom/${response.body.customToken}`
+  );
+
+  return {
+    authHeader: { Authorization: `Bearer ${response.body.idToken}` },
+    userID,
+  };
+};

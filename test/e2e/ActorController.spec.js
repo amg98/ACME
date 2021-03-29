@@ -1,4 +1,4 @@
-const { resetDB, makeRequest, createUserAndLogin } = require("../utils");
+const { resetDB, makeRequest, createUserAndLogin, createSampleUserAndLogin } = require("../utils");
 const mongoose = require("mongoose");
 const ActorSchema = require("../../source/models/ActorSchema");
 
@@ -46,12 +46,23 @@ describe("Actor API", () => {
       password: "passwordActor4",
       isBanned: false,
       roles: "ADMINISTRATOR"
-    }
+    },
+    {
+      name: "Actor Explorer banned",
+      surname: "Díaz",
+      email: "actor1banned@gmail.com",
+      phoneNumber: "666123123",
+      address: "Direccion 1",
+      password: "passwordActor1banned",
+      isBanned: true,
+      roles: "EXPLORER"
+    },
     
   ];
 
   const testURL = "/api/v1/actors";
   let authHeader;
+  let actorID;
 
   var createSampleActor = async function (actor) {
     testActor = actor;
@@ -66,17 +77,17 @@ describe("Actor API", () => {
   });
 
 
-  it.only("Unauthorized in PUT", () => {
+  it("Unauthorized in PUT", () => {
     return makeRequest().put(testURL).expect(401)
   });
 
-  it.only("Missing fields in POST", () => {
+  it("Missing fields in POST", () => {
     return makeRequest()
       .post(testURL)
       .expect(400, { reason: "Missing fields" });
   });
 
-  it.only("Missing fields in PUT", async () => {
+  it("Missing fields in PUT", async () => {
     const userData = await createUserAndLogin("EXPLORER");
     authHeader = userData.authHeader;
 
@@ -89,7 +100,7 @@ describe("Actor API", () => {
 
   //----------------------- POST EXPLORER ------------------------------
 
-  it.only("POST Explorer as anonymous user", async () => {
+  it("POST Explorer as anonymous user", async () => {
     return makeRequest()
       .post(testURL)
       .send({ actor: sampleActors[0] })
@@ -108,7 +119,7 @@ describe("Actor API", () => {
       });
   });
 
-  it.only("POST Explorer as Explorer", async () => {
+  it("POST Explorer as Explorer", async () => {
     const userData = await createUserAndLogin("EXPLORER");
     authHeader = userData.authHeader;
 
@@ -119,7 +130,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Explorer as Manager", async () => {
+  it("POST Explorer as Manager", async () => {
     const userData = await createUserAndLogin("MANAGER");
     authHeader = userData.authHeader;
 
@@ -130,7 +141,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Explorer as Sponsor", async () => {
+  it("POST Explorer as Sponsor", async () => {
     const userData = await createUserAndLogin("SPONSOR");
     authHeader = userData.authHeader;
 
@@ -141,7 +152,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Explorer as Administrator", async () => {
+  it("POST Explorer as Administrator", async () => {
     const userData = await createUserAndLogin("ADMINISTRATOR");
     authHeader = userData.authHeader;
 
@@ -155,14 +166,14 @@ describe("Actor API", () => {
 
   //----------------------- POST MANAGER ------------------------------
 
-  it.only("POST Manager as anonymous user", async () => {
+  it("POST Manager as anonymous user", async () => {
     return makeRequest()
       .post(testURL)
       .send({ actor: sampleActors[1] })
       .expect(403, {reason: "Only administrators can create managers"})
   });
 
-  it.only("POST Manager as Explorer", async () => {
+  it("POST Manager as Explorer", async () => {
     const userData = await createUserAndLogin("EXPLORER");
     authHeader = userData.authHeader;
 
@@ -173,7 +184,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Manager as Manager", async () => {
+  it("POST Manager as Manager", async () => {
     const userData = await createUserAndLogin("MANAGER");
     authHeader = userData.authHeader;
 
@@ -184,7 +195,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Manager as Sponsor", async () => {
+  it("POST Manager as Sponsor", async () => {
     const userData = await createUserAndLogin("SPONSOR");
     authHeader = userData.authHeader;
 
@@ -195,7 +206,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Manager as Administrator", async () => {
+  it("POST Manager as Administrator", async () => {
     const userData = await createUserAndLogin("ADMINISTRATOR");
     authHeader = userData.authHeader;
 
@@ -221,7 +232,7 @@ describe("Actor API", () => {
 
   //----------------------- POST SPONSOR ------------------------------
 
-  it.only("POST Sponsor as anonymous user", async () => {
+  it("POST Sponsor as anonymous user", async () => {
     return makeRequest()
       .post(testURL)
       .send({ actor: sampleActors[2] })
@@ -240,7 +251,7 @@ describe("Actor API", () => {
       });
   });
 
-  it.only("POST Sponsor as Explorer", async () => {
+  it("POST Sponsor as Explorer", async () => {
     const userData = await createUserAndLogin("EXPLORER");
     authHeader = userData.authHeader;
 
@@ -251,7 +262,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Sponsor as Manager", async () => {
+  it("POST Sponsor as Manager", async () => {
     const userData = await createUserAndLogin("MANAGER");
     authHeader = userData.authHeader;
 
@@ -262,7 +273,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Sponsor as Sponsor", async () => {
+  it("POST Sponsor as Sponsor", async () => {
     const userData = await createUserAndLogin("SPONSOR");
     authHeader = userData.authHeader;
 
@@ -273,7 +284,7 @@ describe("Actor API", () => {
       .expect(403, {reason: "You must be an administrator"})
   });
 
-  it.only("POST Sponsor as Administrator", async () => {
+  it("POST Sponsor as Administrator", async () => {
     const userData = await createUserAndLogin("ADMINISTRATOR");
     authHeader = userData.authHeader;
 
@@ -286,14 +297,14 @@ describe("Actor API", () => {
 
   //----------------------- POST ADMINISTRATOR ------------------------------
 
-  it.only("POST Administrator as anonymous user", async () => {
+  it("POST Administrator as anonymous user", async () => {
     return makeRequest()
       .post(testURL)
       .send({ actor: sampleActors[3] })
       .expect(422, {reason: "Can't create an admin user"})
   });
 
-  it.only("POST Administrator as Explorer", async () => {
+  it("POST Administrator as Explorer", async () => {
     const userData = await createUserAndLogin("EXPLORER");
     authHeader = userData.authHeader;
 
@@ -304,7 +315,7 @@ describe("Actor API", () => {
       .expect(422, {reason: "Can't create an admin user"})
   });
 
-  it.only("POST Administrator as Manager", async () => {
+  it("POST Administrator as Manager", async () => {
     const userData = await createUserAndLogin("MANAGER");
     authHeader = userData.authHeader;
 
@@ -315,7 +326,7 @@ describe("Actor API", () => {
       .expect(422, {reason: "Can't create an admin user"})
   });
 
-  it.only("POST Administrator as Sponsor", async () => {
+  it("POST Administrator as Sponsor", async () => {
     const userData = await createUserAndLogin("SPONSOR");
     authHeader = userData.authHeader;
 
@@ -326,7 +337,7 @@ describe("Actor API", () => {
       .expect(422, {reason: "Can't create an admin user"})
   });
 
-  it.only("POST Administrator as Administrator", async () => {
+  it("POST Administrator as Administrator", async () => {
     const userData = await createUserAndLogin("ADMINISTRATOR");
     authHeader = userData.authHeader;
 
@@ -337,10 +348,9 @@ describe("Actor API", () => {
     .expect(422, {reason: "Can't create an admin user"})
   });
 
-  // -----------------------------------------------------------------------
 
   //------------------------------  GET  -----------------------------------
-  it.only("GET actor", async () => {
+  it("GET actor", async () => {
     await createSampleActor(sampleActors[0]);
 
     return makeRequest()
@@ -356,7 +366,7 @@ describe("Actor API", () => {
       });
   });
 
-  it.only("GET non-existent actor", () => {
+  it("GET non-existent actor", () => {
     return makeRequest()
       .get(`${testURL}/${mongoose.Types.ObjectId().toHexString()}`)
       .expect(404);
@@ -364,7 +374,7 @@ describe("Actor API", () => {
 
   //---------------------------  BAN/UNBAN  -----------------------------
 
-  it.only("BAN actor as Administrator", async () => {
+  it("BAN actor as Administrator", async () => {
     const userData = await createUserAndLogin("ADMINISTRATOR");
     authHeader = userData.authHeader;
 
@@ -380,7 +390,7 @@ describe("Actor API", () => {
     });
   });
 
-  it.only("BAN actor as non Admin logged", async () => {
+  it("BAN actor as non Admin logged", async () => {
     const userData = await createUserAndLogin("MANAGER");
     authHeader = userData.authHeader;
 
@@ -393,7 +403,7 @@ describe("Actor API", () => {
     .expect(403, {message: "You have to be an Admin"})
   });
 
-  it.only("BAN actor as anonymous user", async () => {
+  it("BAN actor as anonymous user", async () => {
     await createSampleActor(sampleActors[0]);
 
     return makeRequest()
@@ -402,5 +412,188 @@ describe("Actor API", () => {
     .expect(401, {message: "No token provided or invalid one"})
   });
 
+  it("BAN non-existent actor", async () => {
+    const userData = await createUserAndLogin("ADMINISTRATOR");
+    authHeader = userData.authHeader;
+
+    return makeRequest()
+    .put(`${testURL}/${mongoose.Types.ObjectId().toHexString()}/ban`)
+    .set(authHeader)
+    .send({ isBanned: true })
+    .expect(404, {reason: "Actor to be banned not found"})
+  });
+
+  it("UNBAN actor as Administrator", async () => {
+    const userData = await createUserAndLogin("ADMINISTRATOR");
+    authHeader = userData.authHeader;
+
+    await createSampleActor(sampleActors[4]);
+
+    return makeRequest()
+    .put(`${testURL}/${actorID}/ban`)
+    .set(authHeader)
+    .send({ isBanned: false })
+    .expect(200)
+    .then((response) => {
+      expect(response.body.actor.isBanned).to.equal(false);
+    });
+  });
+
+  it("UNBAN actor as non Admin logged", async () => {
+    const userData = await createUserAndLogin("MANAGER");
+    authHeader = userData.authHeader;
+
+    await createSampleActor(sampleActors[4]);
+
+    return makeRequest()
+    .put(`${testURL}/${actorID}/ban`)
+    .set(authHeader)
+    .send({ isBanned: false })
+    .expect(403, {message: "You have to be an Admin"})
+  });
+
+  it("UNBAN actor as anonymous user", async () => {
+    await createSampleActor(sampleActors[4]);
+
+    return makeRequest()
+    .put(`${testURL}/${actorID}/ban`)
+    .send({ isBanned: false })
+    .expect(401, {message: "No token provided or invalid one"})
+  });
+
+  it("UNBAN non-existent actor", async () => {
+    const userData = await createUserAndLogin("ADMINISTRATOR");
+    authHeader = userData.authHeader;
+
+    return makeRequest()
+    .put(`${testURL}/${mongoose.Types.ObjectId().toHexString()}/ban`)
+    .set(authHeader)
+    .send({ isBanned: false })
+    .expect(404, {reason: "Actor to be banned not found"})
+  });
+
+
+  //---------------------------  PUT ACTOR  -----------------------------
+
+  it("PUT Actor", async () => {
+    const userData = await createSampleUserAndLogin(sampleActors[0]);
+    
+    authHeader = userData.authHeader;
+    actorID = userData.userID;
+
+    const modifiedActor = {
+        _id: actorID,
+        name: "Actor Explorer Modificado",
+        surname: "Díaz",
+        email: "actor1@gmail.com",
+        phoneNumber: "666123123",
+        address: "Direccion 1",
+        password: ""
+    }
+
+    return makeRequest()
+      .put(`${testURL}`)
+      .set(authHeader)
+      .send({ actor: modifiedActor })
+      .expect(200)
+      .then((response) => {
+        expect(response.body.actor._id).to.equal(modifiedActor._id);
+        expect(response.body.actor.name).to.equal(modifiedActor.name);
+        expect(response.body.actor.surname).to.equal(modifiedActor.surname);
+        expect(response.body.actor.email).to.equal(modifiedActor.email);
+        expect(response.body.actor.phoneNumber).to.equal(modifiedActor.phoneNumber);
+        expect(response.body.actor.address).to.equal(modifiedActor.address);
+      });
+  });
+
+  it("PUT Actor - invalid email format", async () => {
+    const userData = await createSampleUserAndLogin(sampleActors[0]);
+    
+    authHeader = userData.authHeader;
+    actorID = userData.userID;
+
+    const modifiedActor = {
+        _id: actorID,
+        name: "Actor Explorer Modificado",
+        surname: "Díaz",
+        email: "actor1gmailcom",
+        phoneNumber: "666123123",
+        address: "Direccion 1",
+        password: ""
+    }
+
+    return makeRequest()
+      .put(`${testURL}`)
+      .set(authHeader)
+      .send({ actor: modifiedActor })
+      .expect(500)
+  });
+
+  it("PUT Actor - empty mandatory fields", async () => {
+    const userData = await createSampleUserAndLogin(sampleActors[0]);
+    
+    authHeader = userData.authHeader;
+    actorID = userData.userID;
+
+    const modifiedActor = {
+        _id: actorID,
+        name: "",
+        surname: "Díaz",
+        email: "actor1gmailcom",
+        phoneNumber: "666123123",
+        address: "Direccion 1",
+        password: ""
+    }
+
+    return makeRequest()
+      .put(`${testURL}`)
+      .set(authHeader)
+      .send({ actor: modifiedActor })
+      .expect(500)
+  });
+
+  it("PUT Actor - invalid actorID", async () => {
+    const userData = await createSampleUserAndLogin(sampleActors[0]);
+    
+    authHeader = userData.authHeader;
+    actorID = userData.userID;
+
+    const modifiedActor = {
+        _id: actorID+1,
+        name: "Actor Explorer Modificado",
+        surname: "Díaz",
+        email: "actor1@gmail.com",
+        phoneNumber: "666123123",
+        address: "Direccion 1",
+        password: ""
+    }
+
+    return makeRequest()
+      .put(`${testURL}`)
+      .set(authHeader)
+      .send({ actor: modifiedActor })
+      .expect(403, {reason: "You are not allowed to edit this profile"})
+  });
+
+  it("PUT Actor - anonymous user", async () => {
+    const userData = await createSampleUserAndLogin(sampleActors[0]);
+
+    actorID = userData.userID;
+
+    const modifiedActor = {
+        _id: actorID,
+        name: "Actor Explorer Modificado",
+        surname: "Díaz",
+        email: "actor1@gmail.com",
+        phoneNumber: "666123123",
+        address: "Direccion 1",
+        password: ""
+    }
+
+    return makeRequest()
+      .put(`${testURL}`)
+      .send({ actor: modifiedActor })
+      .expect(401, {message: "No token provided or invalid one"})
+  });
 
 });

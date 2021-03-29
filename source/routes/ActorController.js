@@ -146,7 +146,9 @@ const updateActor = async (req, res) => {
 const banActor = async (req, res) => {
     try {
       const actor = await Actor.findOne( {_id: req.params.id} );
-
+      if(!actor){
+        return res.status(404).json({reason: "Actor to be banned not found"});
+      }
       actor.isBanned = req.body.isBanned;
       const doc = await actor.save();
 
@@ -184,11 +186,6 @@ module.exports.register = (apiPrefix, router) => {
  /**
  * @typedef ActorBan
  * @property {boolean} isBanned - Ban status to update
- */
-
- /**
- * @typedef Rol
- * @property {string} rolName.required          - User role (explorer, manager, sponsor, administrator)
  */
 
 /**
