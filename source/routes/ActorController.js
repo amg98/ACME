@@ -198,6 +198,6 @@ module.exports.register = (apiPrefix, router) => {
  * @property {string} address                   - User address
  * @property {string} password.required         - User password
  * @property {boolean} isBanned.required        - Ban status (true/false)
- * @property {Array.<Rol>} roles.required       - User roles (explorer, manager, sponsor, administrator)
+ * @property {Array.<string>} roles.required       - User roles (explorer, manager, sponsor, administrator)
  */
 
