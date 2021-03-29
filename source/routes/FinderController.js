@@ -1,5 +1,5 @@
-const { DocumentProvider } = require("mongoose");
 const Finder = require("../models/FinderSchema");
+const FinderResults = require("../models/FinderResultsSchema");
 const Trip = require("../models/TripSchema");
 const systemParamsController = require("./SystemParamsController");
 const Validators = require("../middlewares/Validators");
@@ -18,7 +18,7 @@ const { CheckActor } = require("../middlewares/Auth");
  */
 const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
-    const doc = await Finder.findById(req.params.id);
+    let doc = await Finder.findById(req.params.id).populate('trips');
     if(doc) {
         return res.status(200).send(doc);
     } else {
@@ -68,7 +68,6 @@ const createOne = async (req, res) => {
     let sD = Date.parse(req.body.startDate)
     let eD = Date.parse(req.body.endDate)
     const maxResults = await systemParamsController.getFinderMaxResults();
-    const tripsTTL = await systemParamsController.getFinderResultsTTL();
 
     if(isNaN(sD)){
         sD = undefined
@@ -116,11 +115,11 @@ const createOne = async (req, res) => {
         startDate: sD,
         endDate: eD,
         actorID: req.body.actorID,
-        trips: trips
     }
-    finder.trips.expireAfterSeconds = tripsTTL;
 
     try {
+        const results = await new FinderResults({results: trips}).save();
+        finder.trips = results.id;
         const doc = await new Finder(finder).save();
         res.status(200).send(doc);
     } catch (err) {
@@ -147,7 +146,6 @@ const editOne = async(req, res) => {
         let sD = Date.parse(req.body.startDate)
         let eD = Date.parse(req.body.endDate)
         const maxResults = await systemParamsController.getFinderMaxResults();
-        const tripsTTL = await systemParamsController.getFinderResultsTTL();
 
         if(isNaN(sD)){
             sD = undefined
@@ -196,9 +194,10 @@ const editOne = async(req, res) => {
             startDate: sD,
             endDate: eD,
             actorID: doc.actorID,
-            trips: trips
         }
-        finder.trips.expireAfterSeconds = tripsTTL;
+
+        const results = await new FinderResults({results: trips}).save();
+        finder.trips = results.id;
 
         doc = await Finder.findOneAndDelete({ _id: req.params.id })
         .catch(err => res.status(500).json({ reason: "Database error" }));
