@@ -137,27 +137,24 @@ const createOne = async (req, res) => {
 const explorerCancel = async(req, res) => {
   console.log(Date() + "-PUT /applications - Explorer CANCEL");
 
-  let doc = await Application.findById(req.params.id);
-  if (doc) {
-    Application.findById(req.params.id, async function (err, application) {
-      if (err) {
-        res.send(err);
+  try{
+    let doc = await Application.findById(req.params.id);
+    if (doc) {
+      if (doc.status === "PENDING" || doc.status === "ACCEPTED") {
+        doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
+          if (err) {
+            res.status(500).json({reason: err});
+          }
+        });
+        return res.status(200).json(doc);
+      } else {
+        return res.status(400).json({reason: "This application can't be updated"})
       }
-      else {
-        if (application.status === "PENDING" || application.status === "ACCEPTED") {
-          let doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
-            if (err) {
-              res.status(500).json({reason: err});
-            }
-          });
-          res.status(200).json(doc);
-        } else {
-          res.status(400).json("This application can't be updated")
-        }
-      }
-    });
-  }else{
-    return res.status(400).send({reason: "Missing fields"});
+    }else{
+      return res.status(400).send({reason: "Missing fields"});
+    }
+  }catch (err) {
+    res.status(500).json({ reason: "Database error" });
   }
 };
 

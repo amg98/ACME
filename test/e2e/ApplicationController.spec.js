@@ -431,7 +431,7 @@ describe("Application API", () => {
             explorerID: mongoose.Types.ObjectId().toHexString(),
             tripID: mongoose.Types.ObjectId().toHexString(),
           })
-        .expect(422);
+        .expect(400);
     }).timeout(10000);
   
     it("Correct application delete", async() => {
@@ -465,7 +465,7 @@ describe("Application API", () => {
       const applicationID = await createApplication(tripID);
 
       return makeRequest()
-      .post(`${testURL}/${applicationID}/cancel`)
+      .put(`${testURL}/${applicationID}/cancel`)
       .set(authHeader)
       .expect(200);
     }).timeout(10000);
@@ -479,21 +479,58 @@ describe("Application API", () => {
       testApplication.explorerID = mongoose.Types.ObjectId().toHexString();
       testApplication.status = "DUE"
 
-      const applicationID = await new ApplicationSchema(testApplication).save();
-      
+      const applicationDUE = await new ApplicationSchema(testApplication).save();
+
       return makeRequest()
-      .put(`${testURL}/${applicationID}/cancel`)
+      .put(`${testURL}/${applicationDUE._id}/cancel`)
       .set(authHeader)
       .expect(400);
+    }).timeout(30000);
+
+    it("Correct manager update", async() => {
+      const userData = await createUserAndLogin("MANAGER");
+      authHeader = userData.authHeader;
+
+      const tripID = await createPublished(sampleTrips[0]);
+      const applicationID = await createApplication(tripID);
+
+      return makeRequest()
+      .put(`${testURL}/${applicationID}/update`)
+      .set(authHeader)
+      .send({status: "REJECTED"})
+      .expect(200);
     }).timeout(10000);
 
-    it("Correct manager update", () => {
-    });
+    it("Trying to update to a wrong status", async() => {
+      const userData = await createUserAndLogin("MANAGER");
+      authHeader = userData.authHeader;
 
-    it("Trying to update to a wrong status", () => {
-    });
+      const tripID = await createPublished(sampleTrips[0]);
+      const applicationID = await createApplication(tripID);
 
-    it("Trying to update with a wrong status", () => {
-    });
+      return makeRequest()
+      .put(`${testURL}/${applicationID}/update`)
+      .set(authHeader)
+      .send({status: "WRONG"})
+      .expect(401);
+    }).timeout(10000);
+
+    it("Trying to update with a wrong status", async() => {
+      const userData = await createUserAndLogin("MANAGER");
+      authHeader = userData.authHeader;
+
+      testApplication = {};
+      testApplication.tripID = await createPublished(sampleTrips[0]);
+      testApplication.explorerID = mongoose.Types.ObjectId().toHexString();
+      testApplication.status = "ACCEPTED"
+
+      const applicationACCEPTED = await new ApplicationSchema(testApplication).save();
+
+      return makeRequest()
+      .put(`${testURL}/${applicationACCEPTED._id}/update`)
+      .set(authHeader)
+      .send({status: "REJECTED"})
+      .expect(400);
+    }).timeout(10000);
   });
   
