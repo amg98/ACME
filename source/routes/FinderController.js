@@ -245,7 +245,7 @@ module.exports.register = (apiPrefix, router) => {
         CheckActor,
         getOneByActor);
     router.post(apiURL,
-        CheckActor,
+        /*CheckActor,*/
         Validators.CheckPricesFinder(),
         Validators.CheckDatesFinder(),
         createOne);

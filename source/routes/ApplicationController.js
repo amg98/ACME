@@ -112,7 +112,7 @@ const createOne = async (req, res) => {
     res.status(200).send(doc._id);
   } catch (err) {
     if(err === "NoTrip"){
-      res.status(500).json({ reason: "Trip not found" });
+      res.status(400).json({ reason: "Missing fields" });
     }else if(err === "InvalidTrip"){
       res.status(500).json({ reason: "Invalid Trip" });
     }else{
@@ -156,7 +156,7 @@ const explorerCancel = async(req, res) => {
       }
     });
   }else{
-    return res.status(404).send("Application not found");
+    return res.status(400).send({reason: "Missing fields"});
   }
 };
 
@@ -179,7 +179,7 @@ const editOne = (req, res) => {
       if (doc) {
         return Application.findById(doc._id);
       } else {
-        res.sendStatus(401);
+        res.status(400).json({reason: "Missing fields"})
       }
     })
     .then(doc => res.status(200).json(doc))
@@ -232,7 +232,7 @@ const managerUpdate = async(req, res) => {
         }
       });
     } else {
-        return res.status(404).send("Application not found");
+        return res.status(400).send({reason: "Missing fields"});
     }
   }
   catch (err) {
@@ -262,7 +262,7 @@ const deleteOne = async(req, res) => {
     if (doc) {
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({reason: "Missing fields"})
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -363,7 +363,7 @@ const confirmPayment = async (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
-  router.get(apiURL + '/:id',
+  router.get(apiURL + '/:id?',
     CheckExplorer,
     getOne);
   router.get(apiURL + '/trips/:id',
@@ -384,7 +384,7 @@ module.exports.register = (apiPrefix, router) => {
   router.put(apiURL + '/:id/update',
     CheckManager,
     managerUpdate);
-  router.delete(apiURL + '/:id',
+  router.delete(apiURL + '/:id?',
     CheckExplorer,
     deleteOne)
   router.post(`${apiURL}/payment`, 

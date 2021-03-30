@@ -80,7 +80,7 @@ const CheckApplicationNotPaid = (
     !req[objectName][subobjectName].hasOwnProperty(fieldName) ||
     !req[objectName][subobjectName][fieldName]
   ) {
-    res.status(400).json({ reason: "Missing application ID" });
+    res.status(400).json({ reason: "Missing fields" });
     throw 400;
   }
 
