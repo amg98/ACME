@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: acme-deploy
+  labels:
+    app: acme-devel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: acme-devel
+  template:
+    metadata:
+      labels:
+        app: acme-devel
+    spec:
+      containers:
+        - name: acme-devel
+          image: amg98/acme-explorer
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: PORT
+              value: "8080"
+            - name: DBSTRING
+              value: mongodb://mongo:27017/acme-explorer
+            - name: HOSTNAME
+              value: development.acmeexplorer.com
+            - name: SWAGGER_SCHEMA
+              value: http
+            - name: PAYPAL_MODE
+              value: sandbox
+            - name: PAYPAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PAYPAL_CLIENT_ID_DEVEL
+            - name: PAYPAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PAYPAL_CLIENT_SECRET_DEVEL
+            - name: FIREBASE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FIREBASE_API_KEY_DEVEL
+            - name: FIREBASE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FIREBASE_PROJECT_ID_DEVEL
+            - name: FIREBASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FIREBASE_PRIVATE_KEY_DEVEL
+            - name: FIREBASE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FIREBASE_CLIENT_EMAIL_DEVEL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: acme-devel
+spec:
+  selector:
+    app: acme-devel
+  ports:
+    - port: 8080
+      targetPort: 8080
