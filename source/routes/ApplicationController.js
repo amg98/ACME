@@ -95,6 +95,7 @@ const getAllByExplorerId = (req, res) => {
  * @returns {string}                200 - Returns the application identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      422 - Missing Trip
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
@@ -112,7 +113,7 @@ const createOne = async (req, res) => {
     res.status(200).send(doc._id);
   } catch (err) {
     if(err === "NoTrip"){
-      res.status(500).json({ reason: "Trip not found" });
+      res.status(400).json({ reason: "Missing fields" });
     }else if(err === "InvalidTrip"){
       res.status(500).json({ reason: "Invalid Trip" });
     }else{
@@ -136,27 +137,24 @@ const createOne = async (req, res) => {
 const explorerCancel = async(req, res) => {
   console.log(Date() + "-PUT /applications - Explorer CANCEL");
 
-  let doc = await Application.findById(req.params.id);
-  if (doc) {
-    Application.findById(req.params.id, async function (err, application) {
-      if (err) {
-        res.send(err);
+  try{
+    let doc = await Application.findById(req.params.id);
+    if (doc) {
+      if (doc.status === "PENDING" || doc.status === "ACCEPTED") {
+        doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
+          if (err) {
+            res.status(500).json({reason: err});
+          }
+        });
+        return res.status(200).json(doc);
+      } else {
+        return res.status(400).json({reason: "This application can't be updated"})
       }
-      else {
-        if (application.status === "PENDING" || application.status === "ACCEPTED") {
-          let doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
-            if (err) {
-              res.send(err);
-            }
-          });
-          res.send(doc);
-        } else {
-          res.status(400).json("This application can't be updated")
-        }
-      }
-    });
-  }else{
-    return res.status(404).send("Application not found");
+    }else{
+      return res.status(400).send({reason: "Missing fields"});
+    }
+  }catch (err) {
+    res.status(500).json({ reason: "Database error" });
   }
 };
 
@@ -179,7 +177,7 @@ const editOne = (req, res) => {
       if (doc) {
         return Application.findById(doc._id);
       } else {
-        res.sendStatus(401);
+        res.status(400).json({reason: "Missing fields"})
       }
     })
     .then(doc => res.status(200).json(doc))
@@ -216,7 +214,7 @@ const managerUpdate = async(req, res) => {
     if(doc) {
       Application.findById(req.params.id, async function (err, application) {
         if (err) {
-          res.send(err);
+          resres.status(500).json(error);
         }
         else {
           if (application.status === "PENDING") {
@@ -232,14 +230,14 @@ const managerUpdate = async(req, res) => {
         }
       });
     } else {
-        return res.status(404).send("Application not found");
+        return res.status(400).send({reason: "Missing fields"});
     }
   }
   catch (err) {
     if (err === "WrongStatus") {
-      res.status(400).json("Not valid status submitted")
+      res.status(401).json("Not valid status submitted")
     } else {
-      res.status(400).json("Database error")
+      res.status(500).json("Database error")
     }
   }
 };
@@ -262,7 +260,7 @@ const deleteOne = async(req, res) => {
     if (doc) {
       return res.status(200).json(doc);
     } else {
-      return res.sendStatus(401);
+      return res.status(400).json({reason: "Missing fields"})
     }
   } catch (err) {
     res.status(500).json({ reason: "Database error" });
@@ -308,12 +306,12 @@ const deleteOne = async(req, res) => {
               throw "Database error";
           }
       } catch (err) {
-          res.status(500).json({ reason: "Database error" });
+          return res.status(404).json({ reason: "Application not found" });
       }
 
       return res.status(200).send(payment.paymentURL);
   } catch (err) {
-      res.status(500).json({ reason: "Payment error" });
+      return res.status(500).json({ reason: "Payment error" });
   }
 };
 
@@ -363,7 +361,7 @@ const confirmPayment = async (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/applications`;
-  router.get(apiURL + '/:id',
+  router.get(apiURL + '/:id?',
     CheckExplorer,
     getOne);
   router.get(apiURL + '/trips/:id',
@@ -384,18 +382,18 @@ module.exports.register = (apiPrefix, router) => {
   router.put(apiURL + '/:id/update',
     CheckManager,
     managerUpdate);
-  router.delete(apiURL + '/:id',
+  router.delete(apiURL + '/:id?',
     CheckExplorer,
     deleteOne)
   router.post(`${apiURL}/payment`, 
     CheckExplorer,
-    Validators.CheckPaymentDataApplication("body", "paymentData"),
     Validators.Required("body", "paymentData"), 
+    Validators.CheckPaymentDataApplication("body", "paymentData"),
     createPayment);
   router.post(`${apiURL}/payment-confirm`, 
     CheckExplorer,
-    Validators.CheckConfirmDataApplication("body", "confirmData"),
     Validators.Required("body", "confirmData"), 
+    Validators.CheckConfirmDataApplication("body", "confirmData"),
     confirmPayment);
 };
 

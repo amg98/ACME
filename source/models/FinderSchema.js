@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const TripSchema = require("./TripSchema").schema;
-const systemParamsController = require("../routes/SystemParamsController");
 
 const FinderSchema = new Schema({
     keyword: Schema.Types.String,
@@ -10,9 +8,8 @@ const FinderSchema = new Schema({
     startDate: Schema.Types.Date,
     endDate: Schema.Types.Date,
     trips: {
-        type: [TripSchema],
-        default: undefined,
-        //expires: systemParamsController.getFinderResultsTTL()     // HACER DE OTRA FORMA
+        type: Schema.Types.ObjectId,
+        ref: 'FinderResults'
     },
     actorID: Schema.Types.ObjectId
 });

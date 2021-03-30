@@ -1,5 +1,5 @@
-const { DocumentProvider } = require("mongoose");
 const Finder = require("../models/FinderSchema");
+const FinderResults = require("../models/FinderResultsSchema");
 const Trip = require("../models/TripSchema");
 const systemParamsController = require("./SystemParamsController");
 const Validators = require("../middlewares/Validators");
@@ -18,7 +18,7 @@ const { CheckActor } = require("../middlewares/Auth");
  */
 const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
-    const doc = await Finder.findById(req.params.id);
+    let doc = await Finder.findById(req.params.id).populate('trips');
     if(doc) {
         return res.status(200).send(doc);
     } else {
@@ -115,10 +115,11 @@ const createOne = async (req, res) => {
         startDate: sD,
         endDate: eD,
         actorID: req.body.actorID,
-        trips: trips
     }
 
     try {
+        const results = await new FinderResults({results: trips}).save();
+        finder.trips = results.id;
         const doc = await new Finder(finder).save();
         res.status(200).send(doc);
     } catch (err) {
@@ -145,7 +146,7 @@ const editOne = async(req, res) => {
         let sD = Date.parse(req.body.startDate)
         let eD = Date.parse(req.body.endDate)
         const maxResults = await systemParamsController.getFinderMaxResults();
-    
+
         if(isNaN(sD)){
             sD = undefined
         }else{
@@ -193,8 +194,10 @@ const editOne = async(req, res) => {
             startDate: sD,
             endDate: eD,
             actorID: doc.actorID,
-            trips: trips
         }
+
+        const results = await new FinderResults({results: trips}).save();
+        finder.trips = results.id;
 
         doc = await Finder.findOneAndDelete({ _id: req.params.id })
         .catch(err => res.status(500).json({ reason: "Database error" }));
@@ -220,7 +223,6 @@ const editOne = async(req, res) => {
  * @security bearerAuth
  */
 const deleteOne = async (req, res) => {
-    // Necesita actorID autenticado, _id
     try {
         const doc = await Finder.findOneAndDelete({ _id: req.params.finderID });
         if (doc) {
@@ -235,7 +237,7 @@ const deleteOne = async (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/finders`;
-    router.get(apiURL + '/:id', 
+    router.get(apiURL + '/:id?', 
         CheckActor,
         getOne);
     router.get(apiURL + '/actors/:id',
@@ -246,15 +248,13 @@ module.exports.register = (apiPrefix, router) => {
         Validators.CheckPricesFinder(),
         Validators.CheckDatesFinder(),
         createOne);
-    router.put(apiURL + '/:id',
+    router.put(apiURL + '/:id?',
         CheckActor,
         Validators.CheckPricesFinder(),
         Validators.CheckDatesFinder(),
         editOne);
-    router.delete(apiURL + '/:id',
+    router.delete(apiURL + '/:id?',
         CheckActor,
-        Validators.CheckPricesFinder(),
-        Validators.CheckDatesFinder(),
         deleteOne)
 };
 
