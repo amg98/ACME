@@ -123,3 +123,7 @@ dist
 deploy/k8s/*.pem
 deploy/k8s/aws-login.sh
 deploy/k8s/manifests/00-secrets.yml
+.terraform.lock.hcl
+terraform.tfstate
+terraform.*
+.terraform
