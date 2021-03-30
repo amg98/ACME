@@ -223,7 +223,6 @@ const editOne = async(req, res) => {
  * @security bearerAuth
  */
 const deleteOne = async (req, res) => {
-    // Necesita actorID autenticado, _id
     try {
         const doc = await Finder.findOneAndDelete({ _id: req.params.finderID });
         if (doc) {
@@ -238,26 +237,24 @@ const deleteOne = async (req, res) => {
 
 module.exports.register = (apiPrefix, router) => {
     const apiURL = `${apiPrefix}/finders`;
-    router.get(apiURL + '/:id', 
+    router.get(apiURL + '/:id?', 
         CheckActor,
         getOne);
     router.get(apiURL + '/actors/:id',
         CheckActor,
         getOneByActor);
     router.post(apiURL,
-        /*CheckActor,*/
+        CheckActor,
         Validators.CheckPricesFinder(),
         Validators.CheckDatesFinder(),
         createOne);
-    router.put(apiURL + '/:id',
+    router.put(apiURL + '/:id?',
         CheckActor,
         Validators.CheckPricesFinder(),
         Validators.CheckDatesFinder(),
         editOne);
-    router.delete(apiURL + '/:id',
+    router.delete(apiURL + '/:id?',
         CheckActor,
-        Validators.CheckPricesFinder(),
-        Validators.CheckDatesFinder(),
         deleteOne)
 };
 
