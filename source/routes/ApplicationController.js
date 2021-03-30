@@ -95,6 +95,7 @@ const getAllByExplorerId = (req, res) => {
  * @returns {string}                200 - Returns the application identifier
  * @returns {ValidationError}       400 - Supplied parameters are invalid
  * @returns {}                      401 - User is not authorized to perform this operation
+ * @returns {}                      422 - Missing Trip
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
@@ -146,10 +147,10 @@ const explorerCancel = async(req, res) => {
         if (application.status === "PENDING" || application.status === "ACCEPTED") {
           let doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
             if (err) {
-              res.send(err);
+              res.status(500).json({reason: err});
             }
           });
-          res.send(doc);
+          res.status(200).json(doc);
         } else {
           res.status(400).json("This application can't be updated")
         }
@@ -216,7 +217,7 @@ const managerUpdate = async(req, res) => {
     if(doc) {
       Application.findById(req.params.id, async function (err, application) {
         if (err) {
-          res.send(err);
+          resres.status(500).json(error);
         }
         else {
           if (application.status === "PENDING") {
@@ -237,9 +238,9 @@ const managerUpdate = async(req, res) => {
   }
   catch (err) {
     if (err === "WrongStatus") {
-      res.status(400).json("Not valid status submitted")
+      res.status(401).json("Not valid status submitted")
     } else {
-      res.status(400).json("Database error")
+      res.status(500).json("Database error")
     }
   }
 };
@@ -308,12 +309,12 @@ const deleteOne = async(req, res) => {
               throw "Database error";
           }
       } catch (err) {
-          res.status(500).json({ reason: "Database error" });
+          return res.status(404).json({ reason: "Application not found" });
       }
 
       return res.status(200).send(payment.paymentURL);
   } catch (err) {
-      res.status(500).json({ reason: "Payment error" });
+      return res.status(500).json({ reason: "Payment error" });
   }
 };
 
@@ -389,13 +390,13 @@ module.exports.register = (apiPrefix, router) => {
     deleteOne)
   router.post(`${apiURL}/payment`, 
     CheckExplorer,
-    Validators.CheckPaymentDataApplication("body", "paymentData"),
     Validators.Required("body", "paymentData"), 
+    Validators.CheckPaymentDataApplication("body", "paymentData"),
     createPayment);
   router.post(`${apiURL}/payment-confirm`, 
     CheckExplorer,
-    Validators.CheckConfirmDataApplication("body", "confirmData"),
     Validators.Required("body", "confirmData"), 
+    Validators.CheckConfirmDataApplication("body", "confirmData"),
     confirmPayment);
 };
 

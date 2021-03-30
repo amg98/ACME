@@ -20,7 +20,7 @@ const TripSchema = new Schema(
         },
         message: "The ticker format is not valid",
       },
-      //unique: true,
+      unique: true,
     },
     title: {
       type: String,
