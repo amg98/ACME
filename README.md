@@ -90,3 +90,5 @@ Finally, you must add these lines to your /etc/hosts (not the EC2 instance's) to
 my-ec2-ip development.acmeexplorer.com
 my-ec2-ip acmeexplorer.com
 ```
+
+For example, try to access http://development.acmeexplorer.com/api-docs to see the web app working
