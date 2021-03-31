@@ -63,13 +63,11 @@ terraform init
 terraform apply
 ```
 
-Then, you must connect to the instance creating an SSH tunnel to be able to access the website. Minikube has been
-used as the Kubernetes tool to ease deployment. However, as it is a tool for local clusters, we can't access it from
-the Internet, so the SSH tunnel is mandatory in this case. In a more complex scenario, a more suitable tool such as
-kubeadm should be used instead.
+Then, we connect using SSH to the EC2 instance in order to set up the Kubernetes cluster. We do this manually because
+some minikube commands fail randomly, so it is possible that we must enter this multiple times to work.
 
 ```
-sudo ssh -i acmekey.pem -L 80:localhost:80 ec2-user@my-ec2-ip
+ssh -i acmekey.pem ec2-user@my-ec2-ip
 
 ./minikube start --vm-driver=none
 ./minikube addons enable ingress
@@ -77,11 +75,18 @@ cd manifests
 ../minikube kubectl -- apply -f .
 ```
 
-Replacing "my-ec2-ip" with the instance IP obtained from the terraform output. Also, we are setting up the cluster.
+Replacing "my-ec2-ip" with the instance IP obtained from the terraform output.
 
-Finally, you must add these lines to your /etc/hosts (not the EC2 instance's) to be able to access the web application:
+Next, we set up some iptables rules to allow access from the Internet:
 
 ```
-127.0.0.1 development.acmeexplorer.com
-127.0.0.1 acmeexplorer.com
+sudo sysctl net.ipv4.ip_forward=1 
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 127.0.0.1:8080
+```
+
+Finally, you must add these lines to your /etc/hosts (not the EC2 instance's) to be able to access the web application (replacing "my-ec2-ip" with the EC2 instance public IP)
+
+```
+my-ec2-ip development.acmeexplorer.com
+my-ec2-ip acmeexplorer.com
 ```
