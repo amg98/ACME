@@ -7,6 +7,8 @@ services:
       - "127.0.0.1:${PORT}:${PORT}"
     depends_on: 
       - mongo
+    volumes:
+      - "logsvol:/usr/src/app/logs"
     environment:
       - DBSTRING=${DBSTRING}
       - FIREBASE_API_KEY=${FIREBASE_API_KEY}
@@ -34,7 +36,9 @@ services:
         aliases:
           - "mongo${DBPORT}"
     volumes: 
-      - datavol:/data/db
+      - "datavol:/data/db"
+      - "logsvol:/var/log/mongodb/"
+
 
 volumes: 
   datavol:

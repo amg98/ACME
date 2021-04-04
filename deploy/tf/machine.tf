@@ -48,7 +48,7 @@ resource "aws_instance" "machine01" {
   }
 
   provisioner "file" {
-    source = "exportVenvs.sh"
+    source = "exportEnvs.sh"
     destination = "/home/ec2-user/vEnvs.sh"
   }
     provisioner "file" {
@@ -61,6 +61,8 @@ resource "aws_instance" "machine01" {
       "sudo docker network create service-tier",
       "sudo docker run -d -p 80:80 --name nginx-proxy -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy",
       "sudo docker network connect service-tier nginx-proxy",
+      "docker volume create --name=logsvol",
+      "docker volume create --name=datavol",
       "npm install",
       "chmod +x /home/ec2-user/vEnvs.sh",
       "source /home/ec2-user/vEnvs.sh",

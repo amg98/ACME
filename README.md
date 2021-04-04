@@ -24,6 +24,8 @@ Environment variables:
 ## API Documentation
 [Swagger docs](https://acmeexplorer.herokuapp.com/api-docs)
 
+
+
 ## Kubernetes deploy on AWS EC2
 First of all, you need to provide a file located in "deploy/k8s/manifests/00-secrets" with the following structure, containg all the secrets needed for the web application both in development and production mode:
 

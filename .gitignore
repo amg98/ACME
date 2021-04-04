@@ -135,3 +135,4 @@ deploy/tf/terraform.tfstate
 deploy/tf/terraform.*
 deploy/tf/.terraform.lock.hcl
 deploy/tf/env2.sh
+deploy/tf/exportEnvs.sh
