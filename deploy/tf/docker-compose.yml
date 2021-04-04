@@ -1,0 +1,48 @@
+version: '3'
+services:
+  acme:
+    image: amg98/acme-explorer
+    # build: ../..
+    ports:
+      - "127.0.0.1:${PORT}:${PORT}"
+    depends_on: 
+      - mongo
+    environment:
+      - DBSTRING=${DBSTRING}
+      - FIREBASE_API_KEY=${FIREBASE_API_KEY}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - HOSTNAME=${HOSTNAME}
+      - NODE_ENV=${NODE_ENV}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - PAYPAL_MODE=${PAYPAL_MODE}
+      - SWAGGER_SCHEMA=${SWAGGER_SCHEMA}
+      - DBPORT=${DBPORT}
+      - PORT=${PORT}
+      - VIRTUAL_HOST=${VIRTUAL_HOST}
+      - VIRTUAL_PORT=${VIRTUAL_PORT}
+    networks:
+      service-tier:
+    restart: on-failure
+  mongo:
+    image: "mongo"
+    command: --port ${DBPORT} --logpath /var/log/mongodb/mongodb.log
+    networks:
+      service-tier: 
+        aliases:
+          - "mongo${DBPORT}"
+    volumes: 
+      - datavol:/data/db
+
+volumes: 
+  datavol:
+  logsvol:
+    external: true
+
+networks:
+    service-tier:
+        external: true
+
+
