@@ -30,7 +30,7 @@ services:
     restart: on-failure
   mongo:
     image: "mongo"
-    command: --port ${DBPORT} --logpath /var/log/mongodb/mongodb.log
+    command: --port ${DBPORT} --logpath /var/log/mongodb/mongodb.log --auth
     networks:
       service-tier: 
         aliases:

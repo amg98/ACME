@@ -38,42 +38,33 @@ resource "aws_instance" "machine01" {
   }
 
   provisioner "file" {
-    source = ".env"
-    destination = "/home/ec2-user/.env"
+    source = "./secrets.sh"
+    destination = "/home/ec2-user/secrets.sh"
   }
 
   provisioner "file" {
-    source = "env2.sh"
-    destination = "/home/ec2-user/env2.sh"
-  }
-
-  provisioner "file" {
-    source = "exportEnvs.sh"
-    destination = "/home/ec2-user/vEnvs.sh"
+    source = "./start.sh"
+    destination = "/home/ec2-user/start.sh"
   }
     provisioner "file" {
     source = "docker-compose.yml"
     destination = "/home/ec2-user/docker-compose.yml"
   }
 
+  provisioner "file" {
+    source = "../../test/"
+    destination = "/home/ec2-user/docker-compose.yml"
+  }
+
+  provisioner "remote-exec" {
+    script= "./start.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo docker network create service-tier",
-      "sudo docker run -d -p 80:80 --name nginx-proxy -v /var/run/docker.sock:/tmp/docker.sock:ro jwilder/nginx-proxy",
-      "sudo docker network connect service-tier nginx-proxy",
-      "docker volume create --name=logsvol",
-      "docker volume create --name=datavol",
-      "npm install",
-      "chmod +x /home/ec2-user/vEnvs.sh",
-      "source /home/ec2-user/vEnvs.sh",
-      "echo $FIREBASE_PRIVATE_KEY",
-      "echo $PAYPAL_MODE",
-      "export PORT=8001",
-      "export DBPORT=27017",
-      "export VIRTUAL_HOST=do2021-grupal.com",
-      "export NODE_ENV=development",
-      "docker-compose -p ${var.hostname} --env-file=/home/ec2-user/.env up -d",
       "docker run -d --name portainer -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer"
     ]
   }
+
+
 }
