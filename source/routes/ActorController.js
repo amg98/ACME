@@ -153,7 +153,7 @@ const banActor = async (req, res) => {
       const doc = await actor.save();
 
       if(doc) {
-        return res.status(200).json({message: "Actor ban status updated", _id:actor._id, isBanned:actor.isBanned});
+        return res.status(200).json({message: "Actor ban status updated", _id:doc._id, isBanned:doc.isBanned});
       } else {
         return res.status(404).end();
       }
