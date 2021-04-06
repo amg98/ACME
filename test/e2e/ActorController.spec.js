@@ -110,10 +110,7 @@ describe("Actor API", () => {
           true
         );
         expect(response.body.name).to.equal(sampleActors[0].name);
-        expect(response.body.surname).to.equal(sampleActors[0].surname);
         expect(response.body.email).to.equal(sampleActors[0].email);
-        expect(response.body.phoneNumber).to.equal(sampleActors[0].phoneNumber);
-        expect(response.body.address).to.equal(sampleActors[0].address);
         expect(response.body.roles[0]).to.equal(sampleActors[0].roles);
 
       });
@@ -221,10 +218,7 @@ describe("Actor API", () => {
           true
         );
         expect(response.body.name).to.equal(sampleActors[1].name);
-        expect(response.body.surname).to.equal(sampleActors[1].surname);
         expect(response.body.email).to.equal(sampleActors[1].email);
-        expect(response.body.phoneNumber).to.equal(sampleActors[1].phoneNumber);
-        expect(response.body.address).to.equal(sampleActors[1].address);
         expect(response.body.roles[0]).to.equal(sampleActors[1].roles);
 
       });
@@ -242,10 +236,7 @@ describe("Actor API", () => {
           true
         );
         expect(response.body.name).to.equal(sampleActors[2].name);
-        expect(response.body.surname).to.equal(sampleActors[2].surname);
         expect(response.body.email).to.equal(sampleActors[2].email);
-        expect(response.body.phoneNumber).to.equal(sampleActors[2].phoneNumber);
-        expect(response.body.address).to.equal(sampleActors[2].address);
         expect(response.body.roles[0]).to.equal(sampleActors[2].roles);
 
       });
@@ -386,7 +377,7 @@ describe("Actor API", () => {
     .send({ isBanned: true })
     .expect(200)
     .then((response) => {
-      expect(response.body.actor.isBanned).to.equal(true);
+      expect(response.body.isBanned).to.equal(true);
     });
   });
 
@@ -435,7 +426,7 @@ describe("Actor API", () => {
     .send({ isBanned: false })
     .expect(200)
     .then((response) => {
-      expect(response.body.actor.isBanned).to.equal(false);
+      expect(response.body.isBanned).to.equal(false);
     });
   });
 
@@ -497,12 +488,9 @@ describe("Actor API", () => {
       .send({ actor: modifiedActor })
       .expect(200)
       .then((response) => {
-        expect(response.body.actor._id).to.equal(modifiedActor._id);
-        expect(response.body.actor.name).to.equal(modifiedActor.name);
-        expect(response.body.actor.surname).to.equal(modifiedActor.surname);
-        expect(response.body.actor.email).to.equal(modifiedActor.email);
-        expect(response.body.actor.phoneNumber).to.equal(modifiedActor.phoneNumber);
-        expect(response.body.actor.address).to.equal(modifiedActor.address);
+        expect(response.body._id).to.equal(modifiedActor._id);
+        expect(response.body.name).to.equal(modifiedActor.name);
+        expect(response.body.email).to.equal(modifiedActor.email);
       });
   });
 

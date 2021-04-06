@@ -55,7 +55,7 @@ const createActor = async (req, res) => {
       }
 
       const actor = await new Actor(req.body.actor).save();
-      res.status(200).json(actor);
+      res.status(200).json({_id:actor._id, name:actor.name, email:actor.email, roles:actor.roles, isBanned:actor.isBanned});
     } catch (err) {
         res.status(500).json({ reason: "Database error", reason: err });
     }
@@ -86,7 +86,7 @@ const createActor = async (req, res) => {
                   res.status(500).json({ reason: "Database error", err: err }) 
                 } 
                 else { 
-                  res.status(200).json(actor);
+                  res.status(200).json({_id:actor._id, name:actor.name, email:actor.email, roles:actor.roles, isBanned:actor.isBanned});
                 } 
               });
           })
@@ -123,7 +123,7 @@ const updateActor = async (req, res) => {
       let doc = await Actor.updateOne(actor, {name, surname, email, phoneNumber, address, password}, { runValidators: true });
       if(doc) {
         doc = await Actor.findById(actor._id);
-        return res.status(200).json({message: "Actor profile updated", actor:doc});
+        return res.status(200).json({message: "Actor profile updated", _id:doc._id, name:doc.name, email:doc.email, roles:doc.roles, isBanned:doc.isBanned});
       } else {
           return res.status(404).end();
       }
@@ -153,7 +153,7 @@ const banActor = async (req, res) => {
       const doc = await actor.save();
 
       if(doc) {
-        return res.status(200).json({message: "Actor ban status updated", actor:doc});
+        return res.status(200).json({message: "Actor ban status updated", _id:actor._id, isBanned:actor.isBanned});
       } else {
         return res.status(404).end();
       }
