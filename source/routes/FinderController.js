@@ -1,5 +1,4 @@
 const Finder = require("../models/FinderSchema");
-const FinderResults = require("../models/FinderResultsSchema");
 const Trip = require("../models/TripSchema");
 const systemParamsController = require("./SystemParamsController");
 const Validators = require("../middlewares/Validators");
@@ -18,11 +17,20 @@ const { CheckActor } = require("../middlewares/Auth");
  */
 const getOne = async(req, res) => {
     console.log(Date() + "-GET /finder");
-    let doc = await Finder.findById(req.params.id).populate('trips');
-    if(doc) {
-        return res.status(200).send(doc);
-    } else {
-        return res.status(404).send("Finder not found");
+    try {
+        let doc = await Finder.findById(req.params.id).exec();
+        if(!doc) return res.status(404).send("Finder not found");
+
+        const ttlFinder = await systemParamsController.getFinderResultsTTL();
+        if(doc.createdAt.getTime() + (ttlFinder*60*60*1000)  <= new Date().getTime()){
+            doc.trips = []
+            return res.status(200).send(doc);
+        }else{
+            const subdoc = await Trip.populate(doc, {path: 'trips'});
+            return res.status(200).send(subdoc);
+        }
+    } catch (err) {
+        return res.status(500).json({ reason: "Database error" });
     }
 };
 
@@ -108,6 +116,8 @@ const createOne = async (req, res) => {
             $and: [filters]
     }).limit(maxResults)
 
+    let tripIds = trips.map(t => t.id);
+
     const finder = {
         keyword: req.body.keyword,
         minPrice: req.body.minPrice,
@@ -115,15 +125,14 @@ const createOne = async (req, res) => {
         startDate: sD,
         endDate: eD,
         actorID: req.body.actorID,
+        trips: tripIds
     }
 
     try {
-        const results = await new FinderResults({results: trips}).save();
-        finder.trips = results.id;
         const doc = await new Finder(finder).save();
-        res.status(200).send(doc);
+        return res.status(200).send(doc);
     } catch (err) {
-        res.status(500).json({ reason: "Database error" });
+        return res.status(500).json({ reason: "Database error" });
     }
 };
 
@@ -143,68 +152,70 @@ const createOne = async (req, res) => {
 const editOne = async(req, res) => {
     let doc = await Finder.findById(req.params.id);
     if (doc) {
-        let sD = Date.parse(req.body.startDate)
-        let eD = Date.parse(req.body.endDate)
-        const maxResults = await systemParamsController.getFinderMaxResults();
+        try{
+            let sD = Date.parse(req.body.startDate)
+            let eD = Date.parse(req.body.endDate)
+            const maxResults = await systemParamsController.getFinderMaxResults();
 
-        if(isNaN(sD)){
-            sD = undefined
-        }else{
-            sD = new Date(sD)
-        }
-        if(isNaN(eD)){
-            eD = undefined
-        }else{
-            eD = new Date(eD)
-        }
-    
-        let filters = {
-            price: {$gte: req.body.minPrice, $lt: req.body.maxPrice},
-            startDate: {$gte: sD},
-            endDate: {$lt: eD},
-        }
-    
-        if(req.body.minPrice === undefined && req.body.maxPrice === undefined){
-            delete filters.price
-        }else if(req.body.minPrice === undefined && req.body.maxPrice !== undefined){
-            delete filters.price.$gte
-        }else if(req.body.minPrice !== undefined && req.body.maxPrice === undefined){
-            delete filters.price.$lt
-        }
-        if(filters.startDate === undefined){
-            delete filters.startDate
-        }
-        if(filters.startDate === undefined){
-            delete filters.endDate
-        }
-    
-        const keywordRegex = new RegExp(req.body.keyword, 'i')
-    
-        let trips = await Trip.find(
-            { 
-                $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
-                $and: [filters]
-        }).limit(maxResults)
+            if(isNaN(sD)){
+                sD = undefined
+            }else{
+                sD = new Date(sD)
+            }
+            if(isNaN(eD)){
+                eD = undefined
+            }else{
+                eD = new Date(eD)
+            }
+        
+            let filters = {
+                price: {$gte: req.body.minPrice, $lt: req.body.maxPrice},
+                startDate: {$gte: sD},
+                endDate: {$lt: eD},
+            }
+        
+            if(req.body.minPrice === undefined && req.body.maxPrice === undefined){
+                delete filters.price
+            }else if(req.body.minPrice === undefined && req.body.maxPrice !== undefined){
+                delete filters.price.$gte
+            }else if(req.body.minPrice !== undefined && req.body.maxPrice === undefined){
+                delete filters.price.$lt
+            }
+            if(filters.startDate === undefined){
+                delete filters.startDate
+            }
+            if(filters.startDate === undefined){
+                delete filters.endDate
+            }
+        
+            const keywordRegex = new RegExp(req.body.keyword, 'i')
+        
+            let trips = await Trip.find(
+                { 
+                    $or: [{ticker: {$regex: keywordRegex}}, {title: {$regex: keywordRegex}}], 
+                    $and: [filters]
+            }).limit(maxResults)
 
-        const finder = {
-            _id: req.params.id,
-            keyword: req.body.keyword,
-            minPrice: req.body.minPrice,
-            maxPrice: req.body.maxPrice,
-            startDate: sD,
-            endDate: eD,
-            actorID: doc.actorID,
+            let tripIds = trips.map(t => t.id);
+
+            const finder = {
+                _id: req.params.id,
+                keyword: req.body.keyword,
+                minPrice: req.body.minPrice,
+                maxPrice: req.body.maxPrice,
+                startDate: sD,
+                endDate: eD,
+                actorID: doc.actorID,
+                trips: tripIds
+            }
+
+            doc = await Finder.findOneAndUpdate({ _id: req.params.id }, finder)
+            doc = await Finder.findById(req.params.id)
+            return res.status(200).json(doc);
+
+        }catch{
+            return res.status(500).json({ reason: "Database error" });
         }
-
-        const results = await new FinderResults({results: trips}).save();
-        finder.trips = results.id;
-
-        doc = await Finder.findOneAndDelete({ _id: req.params.id })
-        .catch(err => res.status(500).json({ reason: "Database error" }));
-
-        doc = await new Finder(finder).save()        
-        .then(doc => res.status(200).json(doc))
-        .catch(err => res.status(500).json({ reason: "Database error" }));
     } else {
         return res.status(404).send("Finder not found");
     }
