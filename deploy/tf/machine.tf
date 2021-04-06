@@ -33,7 +33,7 @@ resource "aws_instance" "machine01" {
       "sudo curl -L https://github.com/docker/compose/releases/download/1.28.6/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose",
       "sudo chmod +x /usr/local/bin/docker-compose",
       "sudo chkconfig docker on",
-      "sudo service docker start",
+      "sudo service docker start"
     ]
   }
 
@@ -46,24 +46,14 @@ resource "aws_instance" "machine01" {
     source = "./start.sh"
     destination = "/home/ec2-user/start.sh"
   }
-    provisioner "file" {
-    source = "docker-compose.yml"
-    destination = "/home/ec2-user/docker-compose.yml"
-  }
 
-  provisioner "file" {
-    source = "../../test/"
+    provisioner "file" {
+    source = "./docker-compose.yml"
     destination = "/home/ec2-user/docker-compose.yml"
   }
 
   provisioner "remote-exec" {
     script= "./start.sh"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "docker run -d --name portainer -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer"
-    ]
   }
 
 

@@ -31,3 +31,5 @@ source /home/ec2-user/secrets.sh
 docker-compose -p ${HOSTNAME} up -d
 
 # docker run --name busybox -v logsvol:/var/log/app -it  busybox sh
+
+docker run -d --name portainer -p 9000:9000 -v /var/run/docker.sock:/var/run/docker.sock portainer/portainer
