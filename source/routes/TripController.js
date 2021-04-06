@@ -392,6 +392,4 @@ module.exports.register = (apiPrefix, router) => {
  * @property {boolean}  isPublished
  * @property {number}  price
  * @property {Array.<Stage>} stages.required
- * @property {string} sponsorBannerURL          - Only in /trips/display resource
- * @property {string} sponsorLandingPageURL     - Only in /trips/display resource
  */
