@@ -165,12 +165,23 @@ const banActor = async (req, res) => {
 
 
 
-module.exports.register = (apiPrefix, router) => {
+module.exports.register = async (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/actors`;
   router.get(apiURL+'/:id', Validators.Required("params", "id"), getActor);
   router.post(apiURL, Validators.Required("body", "actor"), createActor); 
   router.put(apiURL, CheckActor, Validators.Required("body", "actor"), updateActor);
   router.put(apiURL+'/:id/ban', Validators.Required("params", "id"), CheckAdmin, banActor);
+
+  try {
+    await new Actor({
+        name: "admin",
+        surname: "admin",
+        email: "admin@admin.com",
+        password: "admin",
+        roles: ["ADMINISTRATOR"]
+    }).save();
+    console.log("[INFO] Added administrator");
+  } catch { }
 };
 
 /**
