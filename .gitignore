@@ -127,3 +127,11 @@ deploy/k8s/manifests/00-secrets.yml
 terraform.tfstate
 terraform.*
 .terraform
+
+deploy/tf/keys/*.pem
+deploy/tf/.terraform
+deploy/tf/.env
+deploy/tf/terraform.tfstate
+deploy/tf/terraform.*
+deploy/tf/.terraform.lock.hcl
+deploy/tf/secrets.sh
