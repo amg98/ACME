@@ -21,7 +21,7 @@ docker-compose -p ${HOSTNAME} up -d
 # #Production
 export NODE_ENV=production
 export PORT=8081
-export DBPORT=27017
+export DBPORT=27018
 export HOSTNAME=${NODE_ENV}.${BASE_SITE}
 export VIRTUAL_HOST=${HOSTNAME}
 export VIRTUAL_PORT=${PORT}
