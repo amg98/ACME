@@ -14,7 +14,7 @@ export DBPORT=27017
 export HOSTNAME=development.${BASE_SITE}
 export VIRTUAL_HOST=${HOSTNAME}
 export VIRTUAL_PORT=${PORT}
-export DBSTRING="mongodb://mongo${DBPORT}:${DBPORT}/acme-explorer";
+export DBSTRING="mongodb://mongo${DBPORT}:${DBPORT}/acme-explorer-development";
 source /home/ec2-user/secrets.sh
 docker-compose -p ${HOSTNAME} up -d
 
@@ -25,8 +25,7 @@ export DBPORT=27018
 export HOSTNAME=${NODE_ENV}.${BASE_SITE}
 export VIRTUAL_HOST=${HOSTNAME}
 export VIRTUAL_PORT=${PORT}
-
-export DBSTRING="mongodb://mongo${DBPORT}:${DBPORT}/acme-explorer";
+export DBSTRING="mongodb://mongo${DBPORT}:${DBPORT}/acme-explorer-${NODE_ENV}";
 source /home/ec2-user/secrets.sh
 docker-compose -p ${HOSTNAME} up -d
 

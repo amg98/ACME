@@ -87,3 +87,65 @@ Finally, you must add these lines to your /etc/hosts (not the EC2 instance's) to
 127.0.0.1 development.acmeexplorer.com
 127.0.0.1 acmeexplorer.com
 ```
+
+## Terraform deploy on AWS EC2
+First of all, you need to provide two files located in "deploy/tf/":
+
+- # secrets.sh:  
+with the following structure, containg some of the secrets needed for the web application both in development and production mode:
+
+```{yml}
+export FIREBASE_API_KEY= ...
+export FIREBASE_CLIENT_EMAIL= ...
+export FIREBASE_PRIVATE_KEY= ...
+export FIREBASE_PROJECT_ID= ...
+export PAYPAL_CLIENT_ID= ...
+export PAYPAL_CLIENT_SECRET= ...
+export PAYPAL_MODE= ...
+export SWAGGER_SCHEMA= ...
+```
+
+- # start.sh:
+with the following structure, containg the remaining secrets needed for the web application both in development and production mode and running every container needed:
+
+```{yml}
+Production
+export NODE_ENV= ...
+export PORT= ...
+export DBPORT= ...
+export HOSTNAME= ...
+export VIRTUAL_HOST= ...
+export VIRTUAL_PORT= ...
+export DBSTRING= ...
+source /home/ec2-user/secrets.sh
+docker-compose -p ${HOSTNAME} up -d
+```
+
+Next, you must provide a file located in "deploy/tf/keys/paris-keys.pem" with a private key generated in the AWS CLI, used for ssh connections. Also, it is required to define the AWS credentials to be used:
+
+```{sh}
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+```
+
+Once done, you can finally set up the infrastructure in a AWS EC2 instance using Terraform:
+
+```{sh}
+terraform init
+terraform apply
+```
+
+After this, terraform will return an IP that you can use to connect to portainer:
+
+Portainer: <XXX.XXX.XXX.XXX:9000>, the next steps will be registering as an admin, and selecting the Local access.
+Practically you can now see everything working from the inside, every container with their logs and even run a console inside them. (this will make the deploy easier)
+
+
+Finally, you must add these lines to your /etc/hosts (not the EC2 instance's) to be able to access the web application:
+
+```
+<XXX.XXX.XXX.XXX> development.acmeexplorer.com
+<XXX.XXX.XXX.XXX> acmeexplorer.com
+```
+
+(Been <XXX.XXX.XXX.XXX> the IP returned by terraform deployment)
