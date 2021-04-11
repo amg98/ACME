@@ -14,6 +14,10 @@ const YearCubeSchema = new Schema({
     explorerID: {
         type: Schema.Types.ObjectId,
         required: true,
+    }, 
+    computedOn: {
+        type: Date,
+        default: Date.now
     }
 });
 
