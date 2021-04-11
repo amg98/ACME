@@ -20,6 +20,8 @@ Environment variables:
 - FIREBASE_PROJECT_ID: Firebase auth project ID
 - FIREBASE_PRIVATE_KEY: Firebase private key
 - FIREBASE_CLIENT_EMAIL: Generated Firebase email
+- DEFAULT_ADMIN_EMAIL: Only for production environment
+- DEFAULT_ADMIN_PASSWORD: Only for production environment
 
 ## API Documentation
 [Swagger docs](https://acmeexplorer.herokuapp.com/api-docs)
