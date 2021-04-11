@@ -164,6 +164,25 @@ const banActor = async (req, res) => {
 };
 
 
+module.exports.initialize = async () => {
+  if (process.env.NODE_ENV == "production") {
+    try {
+      var admin = await Actor.findOne({email: process.env.DEFAULT_ADMIN_EMAIL});
+      if (admin) return;
+      await new Actor({
+        name: "admin",
+        surname: "admin",
+        email: process.env.DEFAULT_ADMIN_EMAIL,
+        password: process.env.DEFAULT_ADMIN_PASSWORD,
+        roles: ["ADMINISTRATOR"]
+        }).save();
+      console.log("[INFO] Added administrator");
+      } catch { 
+        console.log("[ERROR] Can't create the admin")
+      }
+  }
+};
+
 
 module.exports.register = (apiPrefix, router) => {
   const apiURL = `${apiPrefix}/actors`;

@@ -76,6 +76,9 @@ class App {
                     return SystemParamsController.initialize();
                 })
                 .then(() => {
+                    return ActorController.initialize();
+                })
+                .then(() => {
                     this.server = this.app.listen(this.port, () => {
                         console.log(`[SERVER] Running at port ${this.port}`);
                         resolve();

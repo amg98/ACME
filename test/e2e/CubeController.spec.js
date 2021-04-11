@@ -432,32 +432,6 @@ describe("Cubes API", () => {
   }).timeout(50000);
 
 
-  it.only("GET Cube by explorer0, trip2 and Y03 - last 1080 days", async() => {
-    //1080 días son casi 3 años, dentro del Y03
-    const explorer  = await new ActorSchema(sampleActors[0]).save();
-    const period1 = "Y03";
-    const timeStamp = xDaysAgo(1090);
-
-    //trip0: 724.5 - trip1: 788.5 - trip2: 300 - trip3: 1800
-    await createTripAndApplication(explorer._id, sampleTrips[2], timeStamp);
-    
-    const admin = await createUserAndLogin("ADMINISTRATOR");
-    authHeader = admin.authHeader;
-    userID = admin.userID;
-
-    return makeRequest()
-        .post(`${testURL}`)
-        .set(authHeader)
-        .expect(200, {result:"Cubes computed succesfully."})
-        .then(() => {
-          return makeRequest()
-            .get(`${testURL}/${explorer._id}/period/${period1}`)
-            .set(authHeader)
-            .expect(200, { "Cube amount": 300});
-      })
-
-  }).timeout(50000);
-
   it("GET Cube by explorer0, trip2 and Y03 - last 1200 days", async() => {
     //1200 días son más de 3 años, se escapa del período Y03
     const explorer  = await new ActorSchema(sampleActors[0]).save();
