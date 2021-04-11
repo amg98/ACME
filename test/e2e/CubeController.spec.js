@@ -432,8 +432,8 @@ describe("Cubes API", () => {
   }).timeout(50000);
 
 
-  it("GET Cube by explorer0, trip2 and Y03 - last 1090 days", async() => {
-    //1090 días son casi 3 años, dentro del Y03
+  it.only("GET Cube by explorer0, trip2 and Y03 - last 1080 days", async() => {
+    //1080 días son casi 3 años, dentro del Y03
     const explorer  = await new ActorSchema(sampleActors[0]).save();
     const period1 = "Y03";
     const timeStamp = xDaysAgo(1090);
