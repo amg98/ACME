@@ -37,9 +37,9 @@ const createOne = async (req, res) => {
     console.log(Date() + "-POST /pois");
     try {
       const doc = await new POI(req.body).save();
-      res.status(200).send(doc._id);
+      return res.status(200).send(doc.id);
     } catch (err) {
-        res.status(500).json({ reason: "Database error" });
+      return res.status(500).json({ reason: "Database error" });
     }
 };
 
@@ -63,15 +63,15 @@ const createOne = async (req, res) => {
     try {
         let doc = await POI.findById(req.params.id);
         if(!doc) return res.status(404).send({ reason: "POI not found"});
-        doc =  await Application.findOneAndUpdate({ _id: req.params.id }, req.body)
-        res.status(200).send(doc);
+        doc =  await POI.findOneAndUpdate({ _id: req.params.id }, req.body).exec();
+        return res.status(200).send(doc);
     } catch (err) {
-        res.status(500).json({ reason: "Database error" });
+        return res.status(500).json({ reason: "Database error" });
     }
 };
 
 /**
- * Delete an existing application for a specific explorer
+ * Delete an existing POI
  * @route DELETE /pois/{id}
  * @group POI - Point of interest
  * @param {string} id.path.required        - POI identifier
@@ -83,7 +83,7 @@ const createOne = async (req, res) => {
  */
  const deleteOne = async(req, res) => {
     try {
-      const doc = await Application.findOneAndDelete({ _id: req.params.id });
+      const doc = await POI.findOneAndDelete({ _id: req.params.id });
       if (doc) {
         return res.status(200).json(doc);
       } else {
@@ -105,7 +105,7 @@ const createOne = async (req, res) => {
  const getDashboard = async(req, res) => {
     console.log(Date() + "-GET /pois/dashboard");
     try {
-        let doc = await POI.find().sort({type: desc}).exec();
+        let doc = await POI.find().sort({type: -1}).exec();
         let types = doc.map(p => p.type);
         return res.status(200).send(types);
     } catch (err) {
@@ -119,8 +119,8 @@ const createOne = async (req, res) => {
  * @route PUT /pois/{id}/assignStage
  * @group POI - Point of interest
  * @param {string} id.path.required              - POI identifier
- * @param {POIAssignation.model} trip.path.required  - Trip updates
- * @returns {Trip.model}                         200 - Returns the created trip
+ * @param {POIAssignation.model} poi.body.required  - Trip updates
+ * @returns {Trip.model}                         200 - Returns the edited Trip
  * @returns {ValidationError}                    400 - Supplied parameters are invalid
  * @returns {}                                   401 - User is not authorized to perform this operation
  * @returns {}                                   404 - Trip not found
@@ -130,10 +130,10 @@ const createOne = async (req, res) => {
  const assignPOI = async (req, res) => {
     
     try {
-        let doc = await Trip.find({
-            _id: req.tripID,
-            managerID: req.managerID,
-        });
+        let doc = await Trip.findOne({
+            id: req.body.tripID,
+            managerID: req.body.managerID,
+        }).exec();
         if (!doc) return res.status(404).json(doc);
         doc.stages[req.body.stageID].pois = req.params.id
         doc = await Trip.findOneAndUpdate(
@@ -150,7 +150,7 @@ const createOne = async (req, res) => {
         return res.status(400).json({ reason: "Trip can't be updated" });
       }
     } catch (err) {
-      res.status(500).json({ reason: "Database error" });
+      return res.status(500).json({ reason: "Database error" });
     }
   };
   

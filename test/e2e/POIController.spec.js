@@ -46,7 +46,7 @@ describe("POI API", () => {
     var createTRIP = async function () {  
       let trip = await new TripSchema(sampleTrip).save();
 
-      return trip.id
+      return trip
     };
   
 
@@ -91,13 +91,7 @@ describe("POI API", () => {
         .post(testURL)
         .set(authHeader)
         .send(samplePOI)
-        .expect(200)
-        .then((response) => {
-          expect(mongoose.Types.ObjectId.isValid(response.body._id)).to.equal(
-            true
-          );
-          expect(response.body.title).to.equal(samplePOI.title);
-        });
+        .expect(200);
     }).timeout(10000);
 
     it("Correct POI delete", async() => {
@@ -107,7 +101,7 @@ describe("POI API", () => {
       const poiID = await createPOI();
 
         return makeRequest()
-          .delete(`${testURL}/poiID`)
+          .delete(`${testURL}/${poiID}`)
           .set(authHeader)
           .send()
           .expect(200)
@@ -128,7 +122,7 @@ describe("POI API", () => {
         const newTitle = "Torre del oro";
 
         return makeRequest()
-          .put(`${testURL}/${response.body}`)
+          .put(`${testURL}/${poiID}`)
           .set(authHeader)
           .send({ title: newTitle })
           .expect(200)
@@ -143,14 +137,14 @@ describe("POI API", () => {
         authHeader = userData.authHeader;
   
         const poiID = await createPOI();
-        const tripID = await createTRIP();
+        const trip = await createTRIP();
 
         return makeRequest()
           .put(`${testURL}/${poiID}/assignStage`)
           .set(authHeader)
-          .send({ tripID: tripID,
+          .send({ tripID: trip.id,
                   stageID: 0,
-                  managerID: userData.userID })
+                  managerID: trip.managerID })
           .expect(200)
           .then((response) => {
             expect(response.body.stage[0].poi[0]).to.equal(poiID);
