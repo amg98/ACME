@@ -73,6 +73,9 @@ const TripSchema = new Schema(
           required: [true],
           min: [0],
         },
+        pois: {
+          type: [Schema.Types.ObjectId],
+        },
       },
     ],
   },

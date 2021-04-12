@@ -165,7 +165,7 @@ const banActor = async (req, res) => {
 
 
 module.exports.initialize = async () => {
-  if (process.env.NODE_ENV == "production") {
+  
     try {
       var admin = await Actor.findOne({email: process.env.DEFAULT_ADMIN_EMAIL});
       if (admin) return;
@@ -180,7 +180,7 @@ module.exports.initialize = async () => {
       } catch { 
         console.log("[ERROR] Can't create the admin")
       }
-  }
+  
 };
 
 

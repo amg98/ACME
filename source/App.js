@@ -15,6 +15,7 @@ const ApplicationController = require("./routes/ApplicationController");
 const FinderController = require("./routes/FinderController");
 const TripController = require("./routes/TripController");
 const StatsController = require("./routes/StatsController");
+const POIController = require("./routes/POIController");
 
 class App {
     constructor() {
@@ -40,6 +41,7 @@ class App {
         StatsController.register(apiPrefix, this.router);
         ApplicationController.register(apiPrefix, this.router);
         FinderController.register(apiPrefix, this.router);
+        POIController.register(apiPrefix, this.router);
 
         this.app.use(App.errorHandler);
         swagger.setupSwagger(this.app, this.port);
