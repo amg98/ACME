@@ -75,7 +75,8 @@ const createOne = async (req, res) => {
 
     let sD = Date.parse(req.body.startDate)
     let eD = Date.parse(req.body.endDate)
-    const maxResults = await systemParamsController.getFinderMaxResults();
+    const maxResults = Math.min(Math.max(req.body.maxResults || 10, 1), 100);
+    delete req.body.maxResults;
 
     if(isNaN(sD)){
         sD = undefined
@@ -155,7 +156,8 @@ const editOne = async(req, res) => {
         try{
             let sD = Date.parse(req.body.startDate)
             let eD = Date.parse(req.body.endDate)
-            const maxResults = await systemParamsController.getFinderMaxResults();
+            const maxResults = Math.min(Math.max(req.body.maxResults || 10, 1), 100);
+            delete req.body.maxResults;
 
             if(isNaN(sD)){
                 sD = undefined
@@ -276,6 +278,7 @@ module.exports.register = (apiPrefix, router) => {
  * @property {number} maxPrice         - Max Trip Price
  * @property {string} startDate         - Date Init
  * @property {string} endDate          - End Date
+ * @property {number} maxResults       - Maximum number of results (default of 10)
  * @property {string} actorID          - Actor ID
  */
 
@@ -286,4 +289,5 @@ module.exports.register = (apiPrefix, router) => {
  * @property {number} maxPrice           - Max Trip Price
  * @property {string} startDate           - Date Init
  * @property {string} endDate            - End Date
+ * @property {number} maxResults       - Maximum number of results (default of 10)
  */
