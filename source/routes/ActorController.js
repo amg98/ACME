@@ -3,6 +3,28 @@ const Validators = require("../middlewares/Validators");
 const admin = require('firebase-admin');
 
 const { CheckActor, CheckAdmin } = require("../middlewares/Auth");
+
+/**
+ * Get all actors except admin
+ * @route GET /actors
+ * @group Actors - System users
+ * @returns {Array.<Actor>}         200 - Returns the requested actors
+ * @returns {DatabaseError}         500 - Database error
+ */
+const getActors = async (req, res) => {
+    try {
+        const actors = await Actor.find({
+            roles: { $ne: "ADMINISTRATOR" }
+        })
+            .select("name surname email isBanned roles")
+            .lean()
+            .exec();
+        res.status(200).json(actors);
+    } catch {
+        res.status(500).json({ reason: "Database error" });
+    }
+};
+
 /**
  * Get an actor
  * @route GET /actors/{id}
@@ -12,17 +34,17 @@ const { CheckActor, CheckAdmin } = require("../middlewares/Auth");
  * @returns {DatabaseError}         404 - User not found
  */
 const getActor = (req, res) => {
-    Actor.findById(req.params.id, function(err, actor) {
-        if (err){
-          return res.status(404).json({reason:"Actor not found", code:err});
+    Actor.findById(req.params.id, function (err, actor) {
+        if (err) {
+            return res.status(404).json({ reason: "Actor not found", code: err });
         }
         else {
-          if(!actor){
-            return res.status(404).json({reason:"Actor not found"});
-          }
-          res.status(200).json(actor);
+            if (!actor) {
+                return res.status(404).json({ reason: "Actor not found" });
+            }
+            res.status(200).json(actor);
         }
-      });
+    });
 };
 
 /**
@@ -36,63 +58,63 @@ const getActor = (req, res) => {
  * @returns {DatabaseError}              500 - Database error
  */
 const createActor = async (req, res) => {
-  delete req.body.actor._id;
-  delete req.body.actor.isBanned;
+    delete req.body.actor._id;
+    delete req.body.actor.isBanned;
 
-  if(process.env.NODE_ENV != "development") {
-    if(req.body.actor.roles.includes('ADMINISTRATOR')){
-      return res.status(422).json({ reason: "Can't create an admin user" });
+    if (process.env.NODE_ENV != "development") {
+        if (req.body.actor.roles.includes('ADMINISTRATOR')) {
+            return res.status(422).json({ reason: "Can't create an admin user" });
+        }
     }
-  }
 
-  //Si hay alguien identificado, debe ser un 'ADMINISTRATOR'
-  const headerToken = req.headers.authorization;
+    //Si hay alguien identificado, debe ser un 'ADMINISTRATOR'
+    const headerToken = req.headers.authorization;
 
-  if (!headerToken) {
-    try {
-      if(req.body.actor.roles.includes('MANAGER')) {
-        return res.status(403).json({reason: "Only administrators can create managers"});
-      }
+    if (!headerToken) {
+        try {
+            if (req.body.actor.roles.includes('MANAGER')) {
+                return res.status(403).json({ reason: "Only administrators can create managers" });
+            }
 
-      const actor = await new Actor(req.body.actor).save();
-      res.status(200).json({_id:actor._id, name:actor.name, email:actor.email, roles:actor.roles, isBanned:actor.isBanned});
-    } catch (err) {
-        res.status(500).json({ reason: "Database error", reason: err });
+            const actor = await new Actor(req.body.actor).save();
+            res.status(200).json({ _id: actor._id, name: actor.name, email: actor.email, roles: actor.roles, isBanned: actor.isBanned });
+        } catch (err) {
+            res.status(500).json({ reason: "Database error", reason: err });
+        }
+    } else {
+        if (headerToken && headerToken.split(" ")[0] !== "Bearer") {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+        const idToken = headerToken.split(" ")[1];
+
+        admin.auth().verifyIdToken(idToken)
+            .then((decodedToken) => {
+                var uid = decodedToken.uid; //el uid en este caso es el email
+
+                Actor.findOne({ email: uid }, function (err, obj) {
+                    var loggedActor = obj;
+
+                    if (!loggedActor.roles.includes('ADMINISTRATOR')) {
+                        return res.status(403).json({ reason: "You must be an administrator" });
+                    }
+
+                    if (!req.body.actor.roles.includes('MANAGER')) {
+                        return res.status(422).json({ reason: "New user has to be a Manager" });
+                    }
+
+                    const actor = new Actor(req.body.actor);
+                    actor.save(function (err, actor) {
+                        if (err) {
+                            res.status(500).json({ reason: "Database error", err: err })
+                        }
+                        else {
+                            res.status(200).json({ _id: actor._id, name: actor.name, email: actor.email, roles: actor.roles, isBanned: actor.isBanned });
+                        }
+                    });
+                })
+            })
+            .catch(() => res.status(403).json({ message: "Invalid token, could not authorize" }))
     }
-  } else {
-      if (headerToken && headerToken.split(" ")[0] !== "Bearer") {
-        return res.status(401).json({ message: "Invalid token" });
-      }
-      const idToken = headerToken.split(" ")[1];
-
-      admin.auth().verifyIdToken(idToken)
-        .then((decodedToken) => {
-          var uid = decodedToken.uid; //el uid en este caso es el email
-
-          Actor.findOne({email: uid}, function(err, obj) { 
-              var loggedActor = obj;
-
-              if(!loggedActor.roles.includes('ADMINISTRATOR')){
-                return res.status(403).json({reason: "You must be an administrator"});
-              }
-
-              if(!req.body.actor.roles.includes('MANAGER')) {
-                return res.status(422).json({reason: "New user has to be a Manager"});
-              }
-
-              const actor = new Actor(req.body.actor);
-              actor.save(function(err, actor){ 
-                if(err){ 
-                  res.status(500).json({ reason: "Database error", err: err }) 
-                } 
-                else { 
-                  res.status(200).json({_id:actor._id, name:actor.name, email:actor.email, roles:actor.roles, isBanned:actor.isBanned});
-                } 
-              });
-          })
-        })
-        .catch(() => res.status(403).json({message: "Invalid token, could not authorize"}))
-  }
 
 };
 
@@ -108,29 +130,29 @@ const createActor = async (req, res) => {
  */
 const updateActor = async (req, res) => {
     try {
-      let { name, surname, email, phoneNumber, address, password } = req.body.actor;
+        let { name, surname, email, phoneNumber, address, password } = req.body.actor;
 
-      if(req.body.actor._id != req.actorID) {
-        return res.status(403).json({reason: "You are not allowed to edit this profile"})
-      }
-      let actor = await Actor.findOne({_id: req.actorID});
-  
-      //Seteo de la contraseña original para evitar error de validación en la db cuando viene vacía
-      if(!password) {
-        password = actor.password
-      }
+        if (req.body.actor._id != req.actorID) {
+            return res.status(403).json({ reason: "You are not allowed to edit this profile" })
+        }
+        let actor = await Actor.findOne({ _id: req.actorID });
 
-      let doc = await Actor.updateOne(actor, {name, surname, email, phoneNumber, address, password}, { runValidators: true });
-      if(doc) {
-        doc = await Actor.findById(actor._id);
-        return res.status(200).json({message: "Actor profile updated", _id:doc._id, name:doc.name, email:doc.email, roles:doc.roles, isBanned:doc.isBanned});
-      } else {
-          return res.status(404).end();
-      }
+        //Seteo de la contraseña original para evitar error de validación en la db cuando viene vacía
+        if (!password) {
+            password = actor.password
+        }
 
-  } catch (err) {
-      res.status(500).json({reason: "Database error", err:err});
-  }
+        let doc = await Actor.updateOne(actor, { name, surname, email, phoneNumber, address, password }, { runValidators: true });
+        if (doc) {
+            doc = await Actor.findById(actor._id);
+            return res.status(200).json({ message: "Actor profile updated", _id: doc._id, name: doc.name, email: doc.email, roles: doc.roles, isBanned: doc.isBanned });
+        } else {
+            return res.status(404).end();
+        }
+
+    } catch (err) {
+        res.status(500).json({ reason: "Database error", err: err });
+    }
 };
 
 /**
@@ -145,51 +167,52 @@ const updateActor = async (req, res) => {
  */
 const banActor = async (req, res) => {
     try {
-      const actor = await Actor.findOne( {_id: req.params.id} );
-      if(!actor){
-        return res.status(404).json({reason: "Actor to be banned not found"});
-      }
-      actor.isBanned = req.body.isBanned;
-      const doc = await actor.save();
+        const actor = await Actor.findOne({ _id: req.params.id });
+        if (!actor) {
+            return res.status(404).json({ reason: "Actor to be banned not found" });
+        }
+        actor.isBanned = req.body.isBanned;
+        const doc = await actor.save();
 
-      if(doc) {
-        return res.status(200).json({message: "Actor ban status updated", _id:doc._id, isBanned:doc.isBanned});
-      } else {
-        return res.status(404).end();
-      }
+        if (doc) {
+            return res.status(200).json({ message: "Actor ban status updated", _id: doc._id, isBanned: doc.isBanned });
+        } else {
+            return res.status(404).end();
+        }
 
-  } catch (err) {
-      res.status(500).json({reason: "Database error", err:err});
-  }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error", err: err });
+    }
 };
 
 
 module.exports.initialize = async () => {
-  if (process.env.NODE_ENV == "production") {
-    try {
-      var admin = await Actor.findOne({email: process.env.DEFAULT_ADMIN_EMAIL});
-      if (admin) return;
-      await new Actor({
-        name: "admin",
-        surname: "admin",
-        email: process.env.DEFAULT_ADMIN_EMAIL,
-        password: process.env.DEFAULT_ADMIN_PASSWORD,
-        roles: ["ADMINISTRATOR"]
-        }).save();
-      console.log("[INFO] Added administrator");
-      } catch { 
-        console.log("[ERROR] Can't create the admin")
-      }
-  }
+    if (process.env.NODE_ENV == "production") {
+        try {
+            var admin = await Actor.findOne({ email: process.env.DEFAULT_ADMIN_EMAIL });
+            if (admin) return;
+            await new Actor({
+                name: "admin",
+                surname: "admin",
+                email: process.env.DEFAULT_ADMIN_EMAIL,
+                password: process.env.DEFAULT_ADMIN_PASSWORD,
+                roles: ["ADMINISTRATOR"]
+            }).save();
+            console.log("[INFO] Added administrator");
+        } catch {
+            console.log("[ERROR] Can't create the admin")
+        }
+    }
 };
 
 
 module.exports.register = (apiPrefix, router) => {
-  const apiURL = `${apiPrefix}/actors`;
-  router.get(apiURL+'/:id', Validators.Required("params", "id"), getActor);
-  router.post(apiURL, Validators.Required("body", "actor"), createActor); 
-  router.put(apiURL, CheckActor, Validators.Required("body", "actor"), updateActor);
-  router.put(apiURL+'/:id/ban', Validators.Required("params", "id"), CheckAdmin, banActor);
+    const apiURL = `${apiPrefix}/actors`;
+    router.get(apiURL, CheckAdmin, getActors);
+    router.get(apiURL + '/:id', Validators.Required("params", "id"), getActor);
+    router.post(apiURL, Validators.Required("body", "actor"), createActor);
+    router.put(apiURL, CheckActor, Validators.Required("body", "actor"), updateActor);
+    router.put(apiURL + '/:id/ban', Validators.Required("params", "id"), CheckAdmin, banActor);
 };
 
 /**
@@ -202,16 +225,16 @@ module.exports.register = (apiPrefix, router) => {
  * @property {Actor.model} actor - Actor to update
  */
 
- /**
- * @typedef ActorBan
- * @property {boolean} isBanned - Ban status to update
- */
+/**
+* @typedef ActorBan
+* @property {boolean} isBanned - Ban status to update
+*/
 
 /**
  * @typedef Actor
  * @property {string} _id                       - Unique identifier (ignored in POST requests due to id collision)
  * @property {string} name.required             - User name
- * @property {string} surname.required          - User surname 
+ * @property {string} surname.required          - User surname
  * @property {string} email.required            - User email
  * @property {string} phoneNumber               - User phone number
  * @property {string} address                   - User address
