@@ -2,6 +2,9 @@ const Trip = require("../models/TripSchema");
 const Validators = require("../middlewares/Validators");
 const { CheckManager } = require("../middlewares/Auth");
 const RandExp = require("randexp");
+
+const WEEK = 7 * 24 * 3600 * 100;
+
 /**
  * Get list of published trip
  * @route GET /trips
@@ -169,6 +172,7 @@ const updateTrip = async (req, res) => {
       {
         _id: req.params.id,
         managerID: req.managerID,
+        startDate: { $gte: Date.now() + WEEK },
       },
       req.body.trip
     );
@@ -199,7 +203,7 @@ const deleteTrip = async (req, res) => {
     const doc = await Trip.findOneAndDelete({
       _id: req.params.id,
       managerID: req.managerID,
-      isPublished: false,
+      startDate: { $gte: Date.now() + WEEK },
     });
     if (doc) {
       return res.status(200).json(doc);
@@ -230,7 +234,7 @@ const cancelTrip = async (req, res) => {
         managerID: req.managerID,
         isPublished: true,
         cancelReason: "",
-        startDate: { $gte: Date.now() },
+        startDate: { $gte: Date.now() + WEEK },
       },
       { isCancelled: true, cancelReason: req.body.cancelReason }
     );
