@@ -134,7 +134,6 @@ const applicationsRatio = async (req, res) => {
         if(docs.length === 0) return res.sendStatus(404);
 
         const total = docs.reduce((a, doc) => a + doc.count, 0);
-        docs.filter(doc => doc._id === status)
         const calcRatio = (status) => {
             const doc = docs.find((doc) => doc._id === status)
             if(!doc) return 0;
