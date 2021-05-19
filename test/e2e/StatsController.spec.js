@@ -200,6 +200,29 @@ describe("Stats API", () => {
             });
     });
 
+    it("Applications per ratio OK with missing status", async () => {
+        const bakeApp = (status) => ({ status });
+
+        const apps = [
+            bakeApp("DUE"), bakeApp("REJECTED"),
+            bakeApp("REJECTED"), bakeApp("ACCEPTED"), bakeApp("CANCELLED"),
+            bakeApp("DUE"), bakeApp("ACCEPTED"), bakeApp("DUE")
+        ];
+
+        await ApplicationSchema.collection.insertMany(apps);
+
+        return makeRequest()
+            .get(`${testURL}/applications-ratio`)
+            .set(authHeader)
+            .expect(200, {
+                accepted: 2 / apps.length * 100,
+                cancelled: 1 / apps.length * 100,
+                due: 3 / apps.length * 100,
+                pending: 0,
+                rejected: 2 / apps.length * 100,
+            });
+    });
+
     it("Average price in finders OK", async () => {
         const bakeFinder = (minPrice, maxPrice) => ({ minPrice, maxPrice });
 
