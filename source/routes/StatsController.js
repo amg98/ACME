@@ -133,9 +133,13 @@ const applicationsRatio = async (req, res) => {
 
         if(docs.length === 0) return res.sendStatus(404);
 
-        console.log(docs)
         const total = docs.reduce((a, doc) => a + doc.count, 0);
-        const calcRatio = (status) => docs.find((doc) => doc._id === status).count / total * 100;
+        docs.filter(doc => doc._id === status)
+        const calcRatio = (status) => {
+            const doc = docs.find((doc) => doc._id === status)
+            if(!doc) return 0;
+            return doc.count / total * 100;
+        }
         
         res.status(200).json({
             pending: calcRatio("PENDING"),
@@ -145,7 +149,6 @@ const applicationsRatio = async (req, res) => {
             cancelled: calcRatio("CANCELLED"),
         });
     } catch (err) {
-        console.log(err)
         res.status(500).json({ reason: "Database error" });
     }
 };
