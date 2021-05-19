@@ -144,6 +144,7 @@ const applicationsRatio = async (req, res) => {
             cancelled: calcRatio("CANCELLED"),
         });
     } catch (err) {
+        console.log(err)
         res.status(500).json({ reason: "Database error" });
     }
 };
