@@ -337,14 +337,14 @@ module.exports.register = (apiPrefix, router) => {
     Validators.Required("params", "id"),
     Validators.Required("body", "trip"),
     Validators.CheckDates("body", "trip"),
-    Validators.CheckNotPublished(),
+    //Validators.CheckNotPublished(),
     updateTrip
   );
   router.delete(
     `${apiURL}/:id?`,
     CheckManager,
     Validators.Required("params", "id"),
-    Validators.CheckNotPublished(),
+    //Validators.CheckNotPublished(),
     deleteTrip
   );
   router.put(
@@ -352,7 +352,7 @@ module.exports.register = (apiPrefix, router) => {
     CheckManager,
     Validators.Required("params", "id"),
     Validators.Required("body", "cancelReason"),
-    Validators.CheckNoApplicationsAttached(),
+    //Validators.CheckNoApplicationsAttached(),
     cancelTrip
   );
   router.put(
