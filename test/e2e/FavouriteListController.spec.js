@@ -2,7 +2,7 @@ const { resetDB, makeRequest, createUserAndLogin } = require("../utils");
 const mongoose = require("mongoose");
 const { expect } = require("chai");
 
-describe.only("Favourite Lists API", () => {
+describe("Favourite Lists API", () => {
 
     const testURL = "/api/v1/favourite-lists/sync";
     let authHeader;
