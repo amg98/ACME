@@ -14,13 +14,13 @@ const WEEK = 7 * 24 * 3600 * 100;
  * @returns {DatabaseError} 500 - Database error
  */
 const getTrips = async (req, res) => {
-  try {
-    let docs;
-    docs = await Trip.find({ isPublished: true }).exec();
-    return res.status(200).json(docs);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    try {
+        let docs;
+        docs = await Trip.find({ isPublished: true }).exec();
+        return res.status(200).json(docs);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -33,13 +33,13 @@ const getTrips = async (req, res) => {
  * @security bearerAuth
  */
 const getMyTrips = async (req, res) => {
-  try {
-    let docs;
-    docs = await Trip.find({ managerID: req.managerID }).exec();
-    return res.status(200).json(docs);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    try {
+        let docs;
+        docs = await Trip.find({ managerID: req.managerID }).exec();
+        return res.status(200).json(docs);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -52,19 +52,19 @@ const getMyTrips = async (req, res) => {
  * @returns {DatabaseError} 500 - Database error
  */
 const getTrip = async (req, res) => {
-  try {
-    const doc = await Trip.findOne({
-      _id: req.params.id,
-      isPublished: true,
-    }).exec();
-    if (doc) {
-      return res.status(200).json(doc);
-    } else {
-      return res.sendStatus(404);
+    try {
+        const doc = await Trip.findOne({
+            _id: req.params.id,
+            isPublished: true,
+        }).exec();
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -78,19 +78,19 @@ const getTrip = async (req, res) => {
  * @security bearerAuth
  */
 const getMyTrip = async (req, res) => {
-  try {
-    const doc = await Trip.findOne({
-      _id: req.params.id,
-      managerID: req.managerID,
-    }).exec();
-    if (doc) {
-      return res.status(200).json(doc);
-    } else {
-      return res.sendStatus(404);
+    try {
+        const doc = await Trip.findOne({
+            _id: req.params.id,
+            managerID: req.managerID,
+        }).exec();
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -103,18 +103,18 @@ const getMyTrip = async (req, res) => {
  * @returns {DatabaseError} 500 - Database error
  */
 const searchTrips = async (req, res) => {
-  let re = new RegExp(`.*${req.params.keyword}.*`, "i");
+    let re = new RegExp(`.*${req.params.keyword}.*`, "i");
 
-  try {
-    let docs;
-    docs = await Trip.find({
-      isPublished: true,
-      $or: [{ title: re }, { description: re }, { ticker: re }],
-    }).exec();
-    return res.status(200).json(docs);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    try {
+        let docs;
+        docs = await Trip.find({
+            isPublished: true,
+            $or: [{ title: re }, { description: re }, { ticker: re }],
+        }).exec();
+        return res.status(200).json(docs);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -129,20 +129,20 @@ const searchTrips = async (req, res) => {
  * @security bearerAuth
  */
 const createTrip = async (req, res) => {
-  delete req.body.trip._id;
-  delete req.body.trip.isPublished;
-  delete req.body.trip.isCancelled;
-  delete req.body.trip.price;
-  delete req.body.trip.cancelReason;
-  req.body.trip.managerID = req.managerID;
+    delete req.body.trip._id;
+    delete req.body.trip.isPublished;
+    delete req.body.trip.isCancelled;
+    delete req.body.trip.price;
+    delete req.body.trip.cancelReason;
+    req.body.trip.managerID = req.managerID;
 
-  try {
-    req.body.trip.ticker = await generateTicker(10);
-    const doc = await new Trip(req.body.trip).save();
-    res.status(200).send(doc);
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
+    try {
+        req.body.trip.ticker = await generateTicker(10);
+        const doc = await new Trip(req.body.trip).save();
+        res.status(200).send(doc);
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
+    }
 };
 
 /**
@@ -157,34 +157,34 @@ const createTrip = async (req, res) => {
  * @security bearerAuth
  */
 const updateTrip = async (req, res) => {
-  delete req.body.trip.isPublished;
-  delete req.body.trip.isCancelled;
-  delete req.body.trip.cancelReason;
-  delete req.body.trip.ticker;
-  delete req.body.trip.managerID;
+    delete req.body.trip.isPublished;
+    delete req.body.trip.isCancelled;
+    delete req.body.trip.cancelReason;
+    delete req.body.trip.ticker;
+    delete req.body.trip.managerID;
 
-  req.body.trip.price = req.body.trip.stages.reduce(function (acc, val) {
-    return acc + val.price;
-  }, 0);
+    req.body.trip.price = req.body.trip.stages.reduce(function (acc, val) {
+        return acc + val.price;
+    }, 0);
 
-  try {
-    let doc = await Trip.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        managerID: req.managerID,
-        startDate: { $gte: Date.now() + WEEK },
-      },
-      req.body.trip
-    );
-    if (doc) {
-      doc = await Trip.findById(doc._id);
-      return res.status(200).json(doc);
-    } else {
-      return res.status(400).json({ reason: "Trip can't be updated" });
+    try {
+        let doc = await Trip.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                managerID: req.managerID,
+                startDate: { $gte: Date.now() + WEEK },
+            },
+            req.body.trip
+        );
+        if (doc) {
+            doc = await Trip.findById(doc._id);
+            return res.status(200).json(doc);
+        } else {
+            return res.status(400).json({ reason: "Trip can't be updated" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -199,20 +199,20 @@ const updateTrip = async (req, res) => {
  * @security bearerAuth
  */
 const deleteTrip = async (req, res) => {
-  try {
-    const doc = await Trip.findOneAndDelete({
-      _id: req.params.id,
-      managerID: req.managerID,
-      startDate: { $gte: Date.now() + WEEK },
-    });
-    if (doc) {
-      return res.status(200).json(doc);
-    } else {
-      return res.status(400).json({ reason: "Trip can't be deleted" });
+    try {
+        const doc = await Trip.findOneAndDelete({
+            _id: req.params.id,
+            managerID: req.managerID,
+            startDate: { $gte: Date.now() + WEEK },
+        });
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.status(400).json({ reason: "Trip can't be deleted" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -227,26 +227,26 @@ const deleteTrip = async (req, res) => {
  * @security bearerAuth
  */
 const cancelTrip = async (req, res) => {
-  try {
-    let doc = await Trip.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        managerID: req.managerID,
-        isPublished: true,
-        cancelReason: "",
-        startDate: { $gte: Date.now() + WEEK },
-      },
-      { isCancelled: true, cancelReason: req.body.cancelReason }
-    );
-    if (doc) {
-      doc = await Trip.findById(req.params.id);
-      return res.status(200).json(doc);
-    } else {
-      return res.status(400).json({ reason: "Trip can't be cancelled" });
+    try {
+        let doc = await Trip.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                managerID: req.managerID,
+                isPublished: true,
+                cancelReason: "",
+                startDate: { $gte: Date.now() + WEEK },
+            },
+            { isCancelled: true, cancelReason: req.body.cancelReason }
+        );
+        if (doc) {
+            doc = await Trip.findById(req.params.id);
+            return res.status(200).json(doc);
+        } else {
+            return res.status(400).json({ reason: "Trip can't be cancelled" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -261,106 +261,99 @@ const cancelTrip = async (req, res) => {
  * @security bearerAuth
  */
 const publishTrip = async (req, res) => {
-  try {
-    let doc = await Trip.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        managerID: req.managerID,
-        startDate: { $gte: Date.now() },
-      },
-      { isPublished: true }
-    );
-    if (doc) {
-      doc = await Trip.findById(req.params.id);
-      return res.status(200).json(doc);
-    } else {
-      return res.status(400).json({ reason: "Trip can't be published" });
+    try {
+        let doc = await Trip.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                managerID: req.managerID,
+                startDate: { $gte: Date.now() },
+            },
+            { isPublished: true }
+        );
+        if (doc) {
+            doc = await Trip.findById(req.params.id);
+            return res.status(200).json(doc);
+        } else {
+            return res.status(400).json({ reason: "Trip can't be published" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 async function generateTicker(acc) {
-  if (acc == 0) throw "Maximum tries creating new ticker";
+    if (acc == 0) throw "Maximum tries creating new ticker";
 
-  var today = new Date();
-  today = today.toISOString().substring(0, 10);
+    var today = new Date();
+    today = today.toISOString().substring(0, 10);
 
-  ticker_date = today.slice(2, 4) + today.slice(5, 7) + today.slice(8);
-  letters = new RandExp(/([A-Z]{4})/).gen();
+    ticker_date = today.slice(2, 4) + today.slice(5, 7) + today.slice(8);
+    letters = new RandExp(/([A-Z]{4})/).gen();
 
-  ticker = ticker_date + "-" + letters;
+    ticker = ticker_date + "-" + letters;
 
-  Trip.exists({ ticker: ticker }, function (err) {
-    if (err) {
-      throw err;
-    } else {
-      acc = acc - 1;
-      ticker = generateTicker(acc);
-    }
-  });
-
-  return ticker;
+    const exists = await Trip.exists({ ticker: ticker })
+    if(exists) return await generateTicker(acc - 1)
+    return ticker
 }
 
 module.exports.register = (apiPrefix, router) => {
-  const apiURL = `${apiPrefix}/trips`;
-  router.get(apiURL, getTrips);
-  router.get(
-    `${apiURL}/search/:keyword?`,
-    Validators.Required("params", "keyword"),
-    searchTrips
-  );
-  router.get(`${apiURL}/manager`, CheckManager, getMyTrips);
-  router.get(
-    `${apiURL}/:id?/display`,
-    Validators.Required("params", "id"),
-    getTrip
-  );
-  router.get(
-    `${apiURL}/:id?/display/manager`,
-    CheckManager,
-    Validators.Required("params", "id"),
-    getMyTrip
-  );
-  router.post(
-    apiURL,
-    CheckManager,
-    Validators.Required("body", "trip"),
-    Validators.CheckDates("body", "trip"),
-    createTrip
-  );
-  router.put(
-    `${apiURL}/:id?`,
-    CheckManager,
-    Validators.Required("params", "id"),
-    Validators.Required("body", "trip"),
-    Validators.CheckDates("body", "trip"),
-    //Validators.CheckNotPublished(),
-    updateTrip
-  );
-  router.delete(
-    `${apiURL}/:id?`,
-    CheckManager,
-    Validators.Required("params", "id"),
-    //Validators.CheckNotPublished(),
-    deleteTrip
-  );
-  router.put(
-    `${apiURL}/:id?/cancel`,
-    CheckManager,
-    Validators.Required("params", "id"),
-    Validators.Required("body", "cancelReason"),
-    //Validators.CheckNoApplicationsAttached(),
-    cancelTrip
-  );
-  router.put(
-    `${apiURL}/:id?/publish`,
-    CheckManager,
-    Validators.Required("params", "id"),
-    publishTrip
-  );
+    const apiURL = `${apiPrefix}/trips`;
+    router.get(apiURL, getTrips);
+    router.get(
+        `${apiURL}/search/:keyword?`,
+        Validators.Required("params", "keyword"),
+        searchTrips
+    );
+    router.get(`${apiURL}/manager`, CheckManager, getMyTrips);
+    router.get(
+        `${apiURL}/:id?/display`,
+        Validators.Required("params", "id"),
+        getTrip
+    );
+    router.get(
+        `${apiURL}/:id?/display/manager`,
+        CheckManager,
+        Validators.Required("params", "id"),
+        getMyTrip
+    );
+    router.post(
+        apiURL,
+        CheckManager,
+        Validators.Required("body", "trip"),
+        Validators.CheckDates("body", "trip"),
+        createTrip
+    );
+    router.put(
+        `${apiURL}/:id?`,
+        CheckManager,
+        Validators.Required("params", "id"),
+        Validators.Required("body", "trip"),
+        Validators.CheckDates("body", "trip"),
+        //Validators.CheckNotPublished(),
+        updateTrip
+    );
+    router.delete(
+        `${apiURL}/:id?`,
+        CheckManager,
+        Validators.Required("params", "id"),
+        //Validators.CheckNotPublished(),
+        deleteTrip
+    );
+    router.put(
+        `${apiURL}/:id?/cancel`,
+        CheckManager,
+        Validators.Required("params", "id"),
+        Validators.Required("body", "cancelReason"),
+        //Validators.CheckNoApplicationsAttached(),
+        cancelTrip
+    );
+    router.put(
+        `${apiURL}/:id?/publish`,
+        CheckManager,
+        Validators.Required("params", "id"),
+        publishTrip
+    );
 };
 
 /**
