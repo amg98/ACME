@@ -18,15 +18,15 @@ const Messages = require("../Messages");
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
-const getOne = async(req, res) => {
-  console.log(Date() + "-GET /applications");
+const getOne = async (req, res) => {
+    console.log(Date() + "-GET /applications");
 
-  const doc = await Application.findById(req.params.id);
-  if(doc) {
-      return res.status(200).send(doc);
-  } else {
-      return res.status(404).send("Application not found");
-  }
+    const doc = await Application.findById(req.params.id);
+    if (doc) {
+        return res.status(200).send(doc);
+    } else {
+        return res.status(404).send("Application not found");
+    }
 };
 
 /**
@@ -40,18 +40,18 @@ const getOne = async(req, res) => {
  * @security bearerAuth
  */
 const getAllByTripId = (req, res) => {
-  console.log(Date() + "-GET /applications/trips/id");
+    console.log(Date() + "-GET /applications/trips/id");
 
-  Application.find({ tripID: req.params.id })
-    .lean()
-    .exec(function (err, applications) {
-      if (err) {
-        res.send(err);
-      }
-      else {
-        res.json(applications);
-      }
-    });
+    Application.find({ tripID: req.params.id })
+        .lean()
+        .exec(function (err, applications) {
+            if (err) {
+                res.send(err);
+            }
+            else {
+                res.json(applications);
+            }
+        });
 };
 
 /**
@@ -66,25 +66,25 @@ const getAllByTripId = (req, res) => {
  * @security bearerAuth
  */
 const getAllByExplorerId = (req, res) => {
-  console.log(Date() + "-GET /applications/explorers/id");
-  let status = "PENDING"
-  const possibleStatus = ['PENDING', 'REJECTED', 'DUE', 'ACCEPTED', 'CANCELLED']
-  if (possibleStatus.includes(req.query.status)) {
-    status = req.query.status
-  } else {
-    return res.status(400).json("Not valid status submitted")
-  }
+    console.log(Date() + "-GET /applications/explorers/id");
+    let status = "PENDING"
+    const possibleStatus = ['PENDING', 'REJECTED', 'DUE', 'ACCEPTED', 'CANCELLED']
+    if (possibleStatus.includes(req.query.status)) {
+        status = req.query.status
+    } else {
+        return res.status(400).json("Not valid status submitted")
+    }
 
-  Application.find({ explorerID: req.params.id, status: status })
-    .lean()
-    .exec(function (err, applications) {
-      if (err) {
-        res.send(err);
-      }
-      else {
-        res.json(applications);
-      }
-    });
+    Application.find({ explorerID: req.params.id, status: status })
+        .lean()
+        .exec(function (err, applications) {
+            if (err) {
+                res.send(err);
+            }
+            else {
+                res.json(applications);
+            }
+        });
 };
 
 /**
@@ -100,26 +100,26 @@ const getAllByExplorerId = (req, res) => {
  * @security bearerAuth
  */
 const createOne = async (req, res) => {
-  console.log(Date() + "-POST /applications");
-  try {
-    const trip = await Trip.findById(req.body.tripID);
-    if(trip){
-      if(trip.startDate <= new Date() || !trip.isPublished)
-        throw "InvalidTrip"
-    }else{
-      throw "NoTrip"
+    console.log(Date() + "-POST /applications");
+    try {
+        const trip = await Trip.findById(req.body.tripID);
+        if (trip) {
+            if (trip.startDate <= new Date() || !trip.isPublished)
+                throw "InvalidTrip"
+        } else {
+            throw "NoTrip"
+        }
+        const doc = await new Application(req.body).save();
+        res.status(200).send(doc._id);
+    } catch (err) {
+        if (err === "NoTrip") {
+            res.status(400).json({ reason: "Missing fields" });
+        } else if (err === "InvalidTrip") {
+            res.status(500).json({ reason: "Invalid Trip" });
+        } else {
+            res.status(500).json({ reason: "Database error" });
+        }
     }
-    const doc = await new Application(req.body).save();
-    res.status(200).send(doc._id);
-  } catch (err) {
-    if(err === "NoTrip"){
-      res.status(400).json({ reason: "Missing fields" });
-    }else if(err === "InvalidTrip"){
-      res.status(500).json({ reason: "Invalid Trip" });
-    }else{
-      res.status(500).json({ reason: "Database error" });
-    }
-  }
 };
 
 /**
@@ -134,28 +134,24 @@ const createOne = async (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
-const explorerCancel = async(req, res) => {
-  console.log(Date() + "-PUT /applications - Explorer CANCEL");
+const explorerCancel = async (req, res) => {
+    console.log(Date() + "-PUT /applications - Explorer CANCEL");
 
-  try{
-    let doc = await Application.findById(req.params.id);
-    if (doc) {
-      if (doc.status === "PENDING" || doc.status === "ACCEPTED") {
-        doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }, function (err, applicationUpdated) {
-          if (err) {
-            res.status(500).json({reason: err});
-          }
-        });
-        return res.status(200).json(doc);
-      } else {
-        return res.status(400).json({reason: "This application can't be updated"})
-      }
-    }else{
-      return res.status(400).send({reason: "Missing fields"});
+    try {
+        let doc = await Application.findById(req.params.id);
+        if (doc) {
+            if (doc.status === "PENDING" || doc.status === "ACCEPTED") {
+                doc = await Application.findOneAndUpdate(req.params.id, { status: "CANCELLED" }).exec();
+                return res.status(200).json(doc);
+            } else {
+                return res.status(400).json({ reason: "This application can't be updated" })
+            }
+        } else {
+            return res.sendStatus(404);
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  }catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -171,17 +167,17 @@ const explorerCancel = async(req, res) => {
  * @security bearerAuth
  */
 const editOne = (req, res) => {
-  console.log(Date() + "-PUT /applications");
-  Application.findOneAndUpdate({ _id: req.params.id }, req.body)
-    .then(doc => {
-      if (doc) {
-        return Application.findById(doc._id);
-      } else {
-        res.status(400).json({reason: "Missing fields"})
-      }
-    })
-    .then(doc => res.status(200).json(doc))
-    .catch(err => res.status(500).json({ reason: "Database error" }));
+    console.log(Date() + "-PUT /applications");
+    Application.findOneAndUpdate({ _id: req.params.id }, req.body)
+        .then(doc => {
+            if (doc) {
+                return Application.findById(doc._id);
+            } else {
+                res.status(400).json({ reason: "Missing fields" })
+            }
+        })
+        .then(doc => res.status(200).json(doc))
+        .catch(err => res.status(500).json({ reason: "Database error" }));
 };
 
 /**
@@ -197,49 +193,49 @@ const editOne = (req, res) => {
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
-const managerUpdate = async(req, res) => {
-  console.log(Date() + "-PUT /applications - Manager update");
+const managerUpdate = async (req, res) => {
+    console.log(Date() + "-PUT /applications - Manager update");
 
-  let newStatus = "REJECTED"
-  const possibleStatus = ['REJECTED', 'DUE']
+    let newStatus = "REJECTED"
+    const possibleStatus = ['REJECTED', 'DUE']
 
-  try {
-    if (possibleStatus.includes(req.body.status)) {
-      newStatus = req.body.status
-    } else {
-      throw "WrongStatus"
-    }
-
-    const doc = await Application.findById(req.params.id);
-    if(doc) {
-      Application.findById(req.params.id, async function (err, application) {
-        if (err) {
-          resres.status(500).json(error);
+    try {
+        if (possibleStatus.includes(req.body.status)) {
+            newStatus = req.body.status
+        } else {
+            throw "WrongStatus"
         }
-        else {
-          if (application.status === "PENDING") {
-            let doc = await Application.findOneAndUpdate({ _id: req.params.id }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
-              if (err) {
-                res.send(err);
-              }
+
+        const doc = await Application.findById(req.params.id);
+        if (doc) {
+            Application.findById(req.params.id, async function (err, application) {
+                if (err) {
+                    resres.status(500).json(error);
+                }
+                else {
+                    if (application.status === "PENDING") {
+                        let doc = await Application.findOneAndUpdate({ _id: req.params.id }, { status: newStatus, rejectReason: (newStatus === "REJECTED" && req.body.rejectReason) ? req.body.rejectReason : "" }, function (err, applicationUpdated) {
+                            if (err) {
+                                res.send(err);
+                            }
+                        });
+                        res.send(doc);
+                    } else {
+                        res.status(400).json("This application can't be updated")
+                    }
+                }
             });
-            res.send(doc);
-          } else {
-            res.status(400).json("This application can't be updated")
-          }
+        } else {
+            return res.status(400).send({ reason: "Missing fields" });
         }
-      });
-    } else {
-        return res.status(400).send({reason: "Missing fields"});
     }
-  }
-  catch (err) {
-    if (err === "WrongStatus") {
-      res.status(401).json("Not valid status submitted")
-    } else {
-      res.status(500).json("Database error")
+    catch (err) {
+        if (err === "WrongStatus") {
+            res.status(401).json("Not valid status submitted")
+        } else {
+            res.status(500).json("Database error")
+        }
     }
-  }
 };
 
 
@@ -254,17 +250,17 @@ const managerUpdate = async(req, res) => {
  * @returns {DatabaseError}         500 - Database error
  * @security bearerAuth
  */
-const deleteOne = async(req, res) => {
-  try {
-    const doc = await Application.findOneAndDelete({ _id: req.params.id });
-    if (doc) {
-      return res.status(200).json(doc);
-    } else {
-      return res.status(400).json({reason: "Missing fields"})
+const deleteOne = async (req, res) => {
+    try {
+        const doc = await Application.findOneAndDelete({ _id: req.params.id });
+        if (doc) {
+            return res.status(200).json(doc);
+        } else {
+            return res.status(400).json({ reason: "Missing fields" })
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Database error" });
     }
-  } catch (err) {
-    res.status(500).json({ reason: "Database error" });
-  }
 };
 
 /**
@@ -279,40 +275,40 @@ const deleteOne = async(req, res) => {
  * @returns {DatabaseError}         500 - Database or payment error
  * @security bearerAuth
  */
- const createPayment = async (req, res) => {
-  try {
-      const flatRate = await SystemParamsController.getFlatRate();
+const createPayment = async (req, res) => {
+    try {
+        const flatRate = await SystemParamsController.getFlatRate();
 
-      const payment = await Payments.createPayment({
-          successURL: req.body.paymentData.successURL,
-          cancelURL: req.body.paymentData.cancelURL,
-          itemList: [{
-              "name": Messages.APPLICATION_PAYMENT_NAME[req.body.paymentData.lang],
-              "sku": "001",
-              "price": flatRate.toString(),
-              "currency": "EUR",
-              "quantity": 1
-          }],
-          amount: {
-              "currency": "EUR",
-              "total": flatRate.toString(),
-          },
-          description: Messages.APPLICATION_PAYMENT_DESC[req.body.paymentData.lang],
-      });
+        const payment = await Payments.createPayment({
+            successURL: req.body.paymentData.successURL,
+            cancelURL: req.body.paymentData.cancelURL,
+            itemList: [{
+                "name": Messages.APPLICATION_PAYMENT_NAME[req.body.paymentData.lang],
+                "sku": "001",
+                "price": flatRate.toString(),
+                "currency": "EUR",
+                "quantity": 1
+            }],
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
+            description: Messages.APPLICATION_PAYMENT_DESC[req.body.paymentData.lang],
+        });
 
-      try {
-          let doc = await ApplicationSchema.findOneAndUpdate({ _id: req.body.paymentData.id, status: "DUE" }, { paymentID: payment.paymentID });
-          if (!doc) {
-              throw "Database error";
-          }
-      } catch (err) {
-          return res.status(404).json({ reason: "Application not found" });
-      }
+        try {
+            let doc = await ApplicationSchema.findOneAndUpdate({ _id: req.body.paymentData.id, status: "DUE" }, { paymentID: payment.paymentID });
+            if (!doc) {
+                throw "Database error";
+            }
+        } catch (err) {
+            return res.status(404).json({ reason: "Application not found" });
+        }
 
-      return res.status(200).send(payment.paymentURL);
-  } catch (err) {
-      return res.status(500).json({ reason: "Payment error" });
-  }
+        return res.status(200).send(payment.paymentURL);
+    } catch (err) {
+        return res.status(500).json({ reason: "Payment error" });
+    }
 };
 
 /**
@@ -328,73 +324,73 @@ const deleteOne = async(req, res) => {
 * @security bearerAuth
 */
 const confirmPayment = async (req, res) => {
-  try {
+    try {
 
-      const flatRate = await SystemParamsController.getFlatRate();
+        const flatRate = await SystemParamsController.getFlatRate();
 
-      await Payments.executePayment({
-          payerID: req.body.confirmData.payerID,
-          paymentID: req.body.confirmData.paymentID,
-          amount: {
-              "currency": "EUR",
-              "total": flatRate.toString(),
-          },
-      });
+        await Payments.executePayment({
+            payerID: req.body.confirmData.payerID,
+            paymentID: req.body.confirmData.paymentID,
+            amount: {
+                "currency": "EUR",
+                "total": flatRate.toString(),
+            },
+        });
 
-      try {
-          let doc = await ApplicationSchema.findOneAndUpdate({
-              _id: req.body.confirmData.id,
-              paymentID: req.body.confirmData.paymentID
-          }, { status: "ACCEPTED" });
-          if (doc) {
-              return res.sendStatus(204);
-          } else {
-              throw "Database error";
-          }
-      } catch (err) {
-          res.status(500).json({ reason: "Database error" });
-      }
-  } catch (err) {
-      res.status(500).json({ reason: "Payment error" });
-  }
+        try {
+            let doc = await ApplicationSchema.findOneAndUpdate({
+                _id: req.body.confirmData.id,
+                paymentID: req.body.confirmData.paymentID
+            }, { status: "ACCEPTED" });
+            if (doc) {
+                return res.sendStatus(204);
+            } else {
+                throw "Database error";
+            }
+        } catch (err) {
+            res.status(500).json({ reason: "Database error" });
+        }
+    } catch (err) {
+        res.status(500).json({ reason: "Payment error" });
+    }
 };
 
 module.exports.register = (apiPrefix, router) => {
-  const apiURL = `${apiPrefix}/applications`;
-  router.get(apiURL + '/:id?',
-    CheckExplorer,
-    getOne);
-  router.get(apiURL + '/trips/:id',
-    CheckManager,
-    getAllByTripId);
-  router.get(apiURL + '/explorers/:id',
-    CheckExplorer,
-    getAllByExplorerId);
-  router.post(apiURL,
-    CheckExplorer,
-    createOne);
-  router.put(apiURL,
-    CheckExplorer,
-    editOne);
-  router.put(apiURL + '/:id/cancel',
-    CheckExplorer,
-    explorerCancel);
-  router.put(apiURL + '/:id/update',
-    CheckManager,
-    managerUpdate);
-  router.delete(apiURL + '/:id?',
-    CheckExplorer,
-    deleteOne)
-  router.post(`${apiURL}/payment`, 
-    CheckExplorer,
-    Validators.Required("body", "paymentData"), 
-    Validators.CheckPaymentDataApplication("body", "paymentData"),
-    createPayment);
-  router.post(`${apiURL}/payment-confirm`, 
-    CheckExplorer,
-    Validators.Required("body", "confirmData"), 
-    Validators.CheckConfirmDataApplication("body", "confirmData"),
-    confirmPayment);
+    const apiURL = `${apiPrefix}/applications`;
+    router.get(apiURL + '/:id?',
+        CheckExplorer,
+        getOne);
+    router.get(apiURL + '/trips/:id',
+        CheckManager,
+        getAllByTripId);
+    router.get(apiURL + '/explorers/:id',
+        CheckExplorer,
+        getAllByExplorerId);
+    router.post(apiURL,
+        CheckExplorer,
+        createOne);
+    router.put(apiURL,
+        CheckExplorer,
+        editOne);
+    router.put(apiURL + '/:id/cancel',
+        CheckExplorer,
+        explorerCancel);
+    router.put(apiURL + '/:id/update',
+        CheckManager,
+        managerUpdate);
+    router.delete(apiURL + '/:id?',
+        CheckExplorer,
+        deleteOne)
+    router.post(`${apiURL}/payment`,
+        CheckExplorer,
+        Validators.Required("body", "paymentData"),
+        Validators.CheckPaymentDataApplication("body", "paymentData"),
+        createPayment);
+    router.post(`${apiURL}/payment-confirm`,
+        CheckExplorer,
+        Validators.Required("body", "confirmData"),
+        Validators.CheckConfirmDataApplication("body", "confirmData"),
+        confirmPayment);
 };
 
 /**
